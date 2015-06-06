@@ -1,0 +1,21 @@
+{
+  "name": "CuBoid",
+  "version": "0.0.1",
+  "description": "Cu3PO42's Pokémon IRC bot.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "./node_modules/.bin/tennu config.json -v"
+  },
+  "author": "Cu3PO42",
+  "license": "MIT",
+  "dependencies": {
+    "coffee-script": "^1.9.3",
+    "lodash": "^3.9.3",
+    "mathjs": "^1.7.0",
+    "moment": "^2.10.3",
+    "sails-memory": "^0.10.4",
+    "tennu": "^4.2.4",
+    "waterline": "^0.10.23"
+  }
+}
