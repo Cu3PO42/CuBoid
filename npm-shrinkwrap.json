@@ -348,6 +348,23 @@
         }
       }
     },
+    "tennu-admin": {
+      "version": "3.0.4",
+      "from": "tennu-admin@",
+      "resolved": "https://registry.npmjs.org/tennu-admin/-/tennu-admin-3.0.4.tgz",
+      "dependencies": {
+        "bluebird": {
+          "version": "1.0.8",
+          "from": "bluebird@~1.0.0",
+          "resolved": "https://registry.npmjs.org/bluebird/-/bluebird-1.0.8.tgz"
+        }
+      }
+    },
+    "tennu-control": {
+      "version": "2.0.2",
+      "from": "tennu-control@",
+      "resolved": "https://registry.npmjs.org/tennu-control/-/tennu-control-2.0.2.tgz"
+    },
     "waterline": {
       "version": "0.10.23",
       "from": "waterline@",

@@ -16,6 +16,8 @@
     "moment": "^2.10.3",
     "sails-memory": "^0.10.4",
     "tennu": "^4.2.4",
+    "tennu-admin": "^3.0.4",
+    "tennu-control": "^2.0.2",
     "waterline": "^0.10.23"
   }
 }

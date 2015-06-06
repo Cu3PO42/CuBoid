@@ -3,7 +3,7 @@ moment = require 'moment'
 
 module.exports =
     init: (client, imports) ->
-        messageExtractor = /§tell\s*\w+\s*(.*)$/
+        messageExtractor = /.tell\s*\w+\s*(.*)$/
         handlers:
             "!tell": (message) ->
                 Message.create(from: message.nickname, to: message.args[0], time: new Date(), message: message.message.match(messageExtractor)[1])

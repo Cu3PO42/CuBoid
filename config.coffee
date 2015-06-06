@@ -1,12 +1,19 @@
 module.exports =
     "server": "irc.synirc.net",
-    "password": null,
-    "port": 6667,
+    "port": 6668,
     "nicknames": ["CuBoid"],
     "username": "CuBoid",
     "realname": "Cu's Bot",
     "channels": ["#cuboid"],
     "nickserv": "nickserv",
-    "plugins": ["ping", "npr", "fhf", "calc", "tell"],
+    "plugins": ["enable", "admin", "ping", "npr", "fhf", "calc", "tell", "control", "typegame"],
     "command-trigger": "$",
     "disable-help": false
+    "admins": [
+        nickname: "^Cu3PO42$"
+        identifiedAs: "Cu3PO42"
+    ]
+    "enabled":
+        "typegame":
+            "#TypeGame": true
+
