@@ -2,7 +2,7 @@ module.exports =
     init: (client, imports) ->
         handlers:
             '!ping': (command) ->
-                client.say(command.channel, "PONG")
+                "PONG"
         help:
             'ping': [
                 'ping'

@@ -3,7 +3,7 @@ moment = require 'moment'
 
 module.exports =
     init: (client, imports) ->
-        messageExtractor = /.tell\s*\w+\s*(.*)$/
+        messageExtractor = /.tell\s*\S+\s*(.*)$/
         handlers:
             "!tell": (message) ->
                 Message.create(from: message.nickname, to: message.args[0], time: new Date(), message: message.message.match(messageExtractor)[1])
@@ -16,8 +16,9 @@ module.exports =
                 .then((messages) ->
                     Message.destroy(to: message.nickname)
                     .exec((err, user) -> undefined)
-                    "#{message.nickname}: #{msg.from} said #{moment(msg.time).fromNow()} to tell you: #{msg.message}" for msg in messages
+                    client.say(message.nickname, "#{message.nickname}: #{msg.from} said #{moment(msg.time).fromNow()} to tell you: #{msg.message}" for msg in messages)
                 )
+
         help:
             "tell": [
                 "tell user message"
