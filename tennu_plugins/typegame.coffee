@@ -744,6 +744,8 @@ types = {
     Fairy: 17
 }
 
+# TODO Megs and alt forms?
+
 type_list = []
 for type, i of types
     type_list[i] = type
@@ -788,6 +790,16 @@ module.exports =
                                 cache.running = false
                                 runningCache[channel].pop()
                                 "Correct! #{nick} wins this round!"
+                            else if _.size(cache.guessed) == cache.max
+                                maxUsers = [{count: 0}]
+                                for name, count of cache.userCount
+                                    if count > maxUsers[0].count
+                                        maxUsers = [{name: name, count: count}]
+                                    else if count == maxUsers[0].count
+                                        maxUsers.push(name: name, count: count)
+                                cache.running = false
+                                runningCache[channel].pop()
+                                "All possible guesses made. #{_.map(maxUsers, "name").join(", ")} win#{if maxUsers.length == 1 then "s" else ""} with #{maxUsers[0].count} guesses!"
                             else
                                 "Correct!"
                     else
@@ -818,6 +830,7 @@ module.exports =
                     {type, cnt} = _.sample(type_count_array)
                     cache.type = type
                     cache.cnt = _.random(1, _.min([5, cnt]))
+                    cache.max = cnt
                     cache.userCount = {}
                     cache.guessed = {}
                     cache.types = []
@@ -840,14 +853,14 @@ module.exports =
                     "Unscramble this name: #{cache.scrambled}"
 
             "!guess": enabler.enabled (command) ->
-                guessType(command.channel, command.nickname, command.args[0]) if command.args[0]?
+                guessType(command.channel, command.nickname, command.args.join(" ")) if command.args[0]?
 
             "!unscramble": enabler.enabled (command) ->
-                guessScramble(command.channel, command.nickname, command.args[0]) if command.args[0]?
+                guessScramble(command.channel, command.nickname, command.join(" ")) if command.args[0]?
 
             privmsg: enabler.enabled (message) ->
-                trimmed = message.message.trim()
-                if trimmed.indexOf(" ") == -1 && trimmed.charAt(0) != leaderKey
+                trimmed = message.message.trim().replace(/ +/, " ")
+                if trimmed.charAt(0) != leaderKey
                     rcache = runningCache[message.channel] = runningCache[message.channel] || []
                     switch rcache[rcache.length-1]
                         when "typegame" then guessType(message.channel, message.nickname, trimmed)

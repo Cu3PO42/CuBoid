@@ -2,6 +2,11 @@
   "name": "CuBoid",
   "version": "0.0.1",
   "dependencies": {
+    "bluebird": {
+      "version": "2.9.27",
+      "from": "bluebird@",
+      "resolved": "https://registry.npmjs.org/bluebird/-/bluebird-2.9.27.tgz"
+    },
     "coffee-script": {
       "version": "1.9.3",
       "from": "https://registry.npmjs.org/coffee-script/-/coffee-script-1.9.3.tgz",
@@ -28,6 +33,46 @@
       "version": "2.10.3",
       "from": "moment@",
       "resolved": "https://registry.npmjs.org/moment/-/moment-2.10.3.tgz"
+    },
+    "mysql": {
+      "version": "2.7.0",
+      "from": "mysql@",
+      "resolved": "https://registry.npmjs.org/mysql/-/mysql-2.7.0.tgz",
+      "dependencies": {
+        "bignumber.js": {
+          "version": "2.0.7",
+          "from": "bignumber.js@2.0.7",
+          "resolved": "https://registry.npmjs.org/bignumber.js/-/bignumber.js-2.0.7.tgz"
+        },
+        "readable-stream": {
+          "version": "1.1.13",
+          "from": "readable-stream@~1.1.13",
+          "dependencies": {
+            "core-util-is": {
+              "version": "1.0.1",
+              "from": "core-util-is@~1.0.0"
+            },
+            "isarray": {
+              "version": "0.0.1",
+              "from": "isarray@0.0.1",
+              "resolved": "https://registry.npmjs.org/isarray/-/isarray-0.0.1.tgz"
+            },
+            "string_decoder": {
+              "version": "0.10.31",
+              "from": "string_decoder@~0.10.x"
+            },
+            "inherits": {
+              "version": "2.0.1",
+              "from": "inherits@~2.0.1"
+            }
+          }
+        },
+        "require-all": {
+          "version": "1.0.0",
+          "from": "require-all@~1.0.0",
+          "resolved": "https://registry.npmjs.org/require-all/-/require-all-1.0.0.tgz"
+        }
+      }
     },
     "sails-memory": {
       "version": "0.10.4",

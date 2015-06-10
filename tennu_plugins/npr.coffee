@@ -1,12 +1,20 @@
 module.exports =
     init: (client, imports) ->
-        requiresAdmin = imports.admin.requiresAdmin
         enabler = imports.enable.getEnabler("npr")
-        npr = /\b[0-2]?\d(?:\s*-\s*[0-2]?\d|(?:\s*,\s*[0-2]?\d)*)\s*([\/.-])\s*(?:[0-2]?\d(?:\s*-\s*[0-2]?\d|(?:\s*,\s*[0-2]?\d)*)\s*\1\s*){4}[0-2]?\d(?:\s*-\s*[0-2]?\d|(?:\s*,\s*[0-2]?\d)*)\b/;
+        npr = /\d+(?:\s*-\s*\d+|(?:\s*,\s*\d+)*)\s*([\/.])(?:\s*\d+(?:\s*-\s*\d+|(?:\s*,\s*\d+)*)\s*\1){4}\s*\d+(?:\s*-\s*\d+|(?:\s*,\s*\d+)*)/
+        groupExtractor = /(\d+)\s*$/
 
         handlers:
             privmsg: enabler.enabled (message) ->
-                "Not perfect, reset!" if npr.test message.message
+                if m = message.message.match(npr)
+                    groups = m[0].split(m[1])
+                    for group in groups
+                        max = parseInt(group.match(groupExtractor)[1])
+                        if max > 31
+                            return undefined
+                        else if max < 30
+                            res = "Not perfect, reset!"
+                    res
+
     requires: ["enable"]
-    requiresRoles: ["admin"]
 
