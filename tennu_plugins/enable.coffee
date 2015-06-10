@@ -23,6 +23,18 @@ module.exports =
 
         commands: ["enable", "disable"]
 
+        help:
+            "enable": [
+                "enable <plugin> <channel>"
+                " "
+                "Enables the given plugin in the given channel. Requires admin."
+            ]
+            "disable": [
+                "disable <plugin> <channel>"
+                " "
+                "Disables the given plugin in the given channel. Requires admin."
+            ]
+
         exports:
             getEnabler: (name) ->
                 storage[name] = storage[name] || {}

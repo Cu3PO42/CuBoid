@@ -36,8 +36,8 @@ module.exports =
 
         help:
             "tell": [
-                "tell user message"
+                "tell <user> <message>"
                 " "
-                "Forward message to user when they become active."
+                "Forward a message to the user when they become active. Requires both parties to be identified with NickServ."
             ]
         commands: ["tell"]

@@ -95,15 +95,15 @@ getTypesEfficiency = (types) ->
         execSql("""SELECT type_names.name, type_efficacy.damage_factor
                    FROM type_efficacy
                    JOIN type_names ON type_efficacy.damage_type_id = type_names.type_id AND type_names.local_language_id = 9
-                   WHERE type_efficacy.target_type_id = (SELECT type_id FROM type_names WHERE name = ?)
+                   WHERE type_efficacy.target_type_id = (SELECT DISTINCT type_id FROM type_names WHERE name = ?)
                    ORDER BY damage_factor ASC""", types)
     else
         execSql("""SELECT type_names.name, (type_one.damage_factor * type_two.damage_factor / 100) AS damage_factor
                    FROM type_efficacy AS type_one
                    JOIN type_efficacy AS type_two ON type_one.damage_type_id = type_two.damage_type_id
                    JOIN type_names ON type_one.damage_type_id = type_names.type_id AND type_names.local_language_id = 9
-                   WHERE type_one.target_type_id = (SELECT type_id FROM type_names WHERE name = ?)
-                         AND type_two.target_type_id = (SELECT type_id FROM type_names WHERE name = ?)
+                   WHERE type_one.target_type_id = (SELECT DISTINCT type_id FROM type_names WHERE name = ?)
+                         AND type_two.target_type_id = (SELECT DISTINCT type_id FROM type_names WHERE name = ?)
                    ORDER BY damage_factor ASC""", types)
 
 getTypeEfficiency = (types) ->
@@ -113,15 +113,22 @@ getTypeEfficiency = (types) ->
                FROM type_efficacy
                JOIN type_names AS type_one ON type_one.type_id = type_efficacy.damage_type_id AND type_one.local_language_id = 9
                JOIN type_names AS type_two ON type_two.type_id = type_efficacy.target_type_id AND type_two.local_language_id = 9
-               WHERE type_efficacy.damage_type_id = (SELECT type_id FROM type_names WHERE name = ?)
-                     AND type_efficacy.target_type_id = (SELECT type_id FROM type_names WHERE name = ?)""", types)
+               WHERE type_efficacy.damage_type_id = (SELECT DISTINCT type_id FROM type_names WHERE name = ?)
+                     AND type_efficacy.target_type_id = (SELECT DISTINCT type_id FROM type_names WHERE name = ?)""", types)
+
+parseDescription = (description) ->
+    Promise.resolve description.replace /\[([^\]]*)\]\{([^}]*)\}/g, (match, one, two, offset, string) ->
+        if one != ""
+            one
+        else
+            _.map(two.split(":")[1].split("-"), _.capitalize).join(" ")
 
 module.exports =
     init: (client, imports) ->
         handlers:
             "!learn": (command) ->
-                # TODO Consider searching previous evolutions.
-                # TODO Improve output
+                # TODO Search previous evolutions.
+                # TODO Improve output, i.e. add level and stuff
                 joined = command.args.join(" ")
                 Promise.join(
                     getMoveIdName(joined)
@@ -142,15 +149,16 @@ module.exports =
                 )
 
             "!ability": (command) ->
-                # TODO Parse weird formatting
                 ability = command.args.join(" ")
                 getAbilityInfo(ability)
                 .then((rows) ->
                     e = rows[0]
                     if e?
-                        res = e.effect.split("\n")
-                        res[0] = "#{e.name}: #{res[0]}"
-                        res
+                        parseDescription(e.effect)
+                        .then (description) ->
+                            res = description.split("\n")
+                            res[0] = "#{e.name}: #{res[0]}"
+                            res
                     else
                         "'#{ability}' is not a valid ability."
                 )
@@ -226,12 +234,13 @@ module.exports =
                             getPokemonEggGroups(e.species_id),
                             (abilities, eggGroups) ->
                                 abilities = _.partition(abilities, "is_hidden")
-                                "#{e.name}: [Gender] #{if e.gender_rate != -1 then "#{(8-e.gender_rate)*12.5}% M, #{e.gender_rate*12.5}% F}" else "Genderless"} | [Hatch Cycles] #{e.hatch_counter * 256} | [Egg Groups] #{_.map(eggGroups, "name").join("/")} | [Abilities] #{_.map(abilities[1], "name").join("/")} #{if abilities[0].length then "DW: #{abilities[0][0].name}" else ""}"
+                                "#{e.name}: [Gender] #{if e.gender_rate != -1 then "#{(8-e.gender_rate)*12.5}% M, #{e.gender_rate*12.5}% F" else "Genderless"} | [Hatch Cycles] #{e.hatch_counter * 256} | [Egg Groups] #{_.map(eggGroups, "name").join("/")} | [Abilities] #{_.map(abilities[1], "name").join("/")} #{if abilities[0].length then "DW: #{abilities[0][0].name}" else ""}"
                         )
                     else
                         "'#{joined}' is not a valid Pokemon."
 
             "!type": (command) ->
+                # TODO nicer formatting
                 switch command.args.length
                     when 0
                         "Please specify at least ony type."
@@ -244,7 +253,6 @@ module.exports =
                                #{if sorted[25]? then "4x resistant against: #{_.map(sorted[25], "name").join(", ")}; " else ""}\
                                #{if sorted[50]? then "2x resistant against: #{_.map(sorted[50], "name").join(", ")}; " else ""}\
                                #{if sorted[0]? then "completely resistant against: #{_.map(sorted[0], "name").join(", ")}" else ""}"""
-                            # TODO no damage
                     else
                         "Please specify no more than two types."
 
@@ -261,3 +269,50 @@ module.exports =
                         "#{e.name_one} deals #{damageTypes[e.damage_factor]} damage against #{e.name_two}."
                 else
                     "Please specify exactly two types."
+
+        help:
+            "learn": [
+                "learn <pokemon> <move>"
+                " "
+                "Will tell you if and how a Pokémon can learn a move."
+            ]
+
+            "ability": [
+                "ability <ability>"
+                " "
+                "Return information about the given ability."
+            ]
+
+            "move": [
+                "move <move>"
+                " "
+                "Return the move's stats and a description."
+            ]
+
+            "stats": [
+                "stats <pokemon> [additional parameters]"
+                " "
+                "If no additional parameters are given, return type, base stats and ability of the given Pokemon."
+                "If addition parameters are given, i.e. the level (in the form 'lvl 100'), the nature and the EVs (in the form '100 (hp|atk|def|spatk|spdef)'), the actual stats are calculated."
+            ]
+
+            "eggdata": [
+                "eggdata <pokemon>"
+                " "
+                "Return data such as hatch cycles, gender ratio and abilities."
+            ]
+
+            "type": [
+                "type <type> [type]"
+                " "
+                "You can specify either one or two types."
+                "Return a list of what types are effective, not very effective, etc. against the given types."
+            ]
+
+            "types": [
+                "types <type> <type>"
+                " "
+                "Return if the first type deals neutral, super effective, ... damage against the second."
+            ]
+
+        commands: ["learn", "ability", "move", "stats", "eggdata", "type", "types"]

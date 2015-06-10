@@ -866,4 +866,31 @@ module.exports =
                         when "typegame" then guessType(message.channel, message.nickname, trimmed)
                         when "scramble" then guessScramble(message.channel, message.nickname, trimmed)
 
+        help:
+            "typegame": [
+                "typegame"
+                " "
+                "Starts a new round of 'typegame'. Enter your guesses in the channel or use the guess command."
+            ]
+
+            "scramble": [
+                "scramble"
+                " "
+                "Starts a new round of the 'scramble' game. Unscramble the name and enter the result in the channel or use the unscramble command."
+            ]
+
+            "guess": [
+                "guess <guess>"
+                " "
+                "Make the given guess for the currently runnig 'typegame' round."
+            ]
+
+            "unscramble": [
+                "unscramble <guess>"
+                " "
+                "Make the given guess for the currently running 'scramble' round."
+            ]
+
+        commands: ["typegame", "scramble", "guess", "scramble"]
+
     requires: ["enable"]

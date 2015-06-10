@@ -7,6 +7,6 @@ module.exports =
             'ping': [
                 'ping'
                 ' '
-                'Responds to ping.'
+                'Responds \"PONG\" to ping.'
             ]
         commands: ['ping']

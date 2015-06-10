@@ -11,7 +11,7 @@ module.exports =
                     ""
         help:
             "calc": [
-                "calc"
+                "calc <expression>"
                 " "
                 "Evaluates the given mathematical expression."
             ]
