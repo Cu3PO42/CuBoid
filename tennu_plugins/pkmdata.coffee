@@ -12,7 +12,7 @@ execSql = (sql, replacement) ->
 
 getMoveIdName = (name) ->
     execSql("""SELECT move_id, name FROM move_names WHERE local_language_id = 9 AND move_id =
-                  (SELECT DISTINCT move_id FROM move_names WHERE ? LIKE concat('% ', name))""", [name])
+                  (SELECT DISTINCT move_id FROM move_names WHERE ? LIKE concat('% ', name) ORDER BY LENGTH(name) DESC LIMIT 1)""", [name])
 
 getSpeciesIdName = (name) ->
     execSql("""SELECT pokemon_species_id, name FROM pokemon_species_names WHERE local_language_id = 9
@@ -90,6 +90,31 @@ getPokemonEggGroups = (id) ->
                     AND egg_group_prose.local_language_id = 9
                WHERE pokemon_egg_groups.species_id = ?""", [id])
 
+getTypesEfficiency = (types) ->
+    if types.length == 1
+        execSql("""SELECT type_names.name, type_efficacy.damage_factor
+                   FROM type_efficacy
+                   JOIN type_names ON type_efficacy.damage_type_id = type_names.type_id AND type_names.local_language_id = 9
+                   WHERE type_efficacy.target_type_id = (SELECT type_id FROM type_names WHERE name = ?)
+                   ORDER BY damage_factor ASC""", types)
+    else
+        execSql("""SELECT type_names.name, (type_one.damage_factor * type_two.damage_factor / 100) AS damage_factor
+                   FROM type_efficacy AS type_one
+                   JOIN type_efficacy AS type_two ON type_one.damage_type_id = type_two.damage_type_id
+                   JOIN type_names ON type_one.damage_type_id = type_names.type_id AND type_names.local_language_id = 9
+                   WHERE type_one.target_type_id = (SELECT type_id FROM type_names WHERE name = ?)
+                         AND type_two.target_type_id = (SELECT type_id FROM type_names WHERE name = ?)
+                   ORDER BY damage_factor ASC""", types)
+
+getTypeEfficiency = (types) ->
+    execSql("""SELECT (SELECT name FROM type_names WHERE type_id = type_efficacy.damage_type_id AND local_language_id = 9) AS name_one,
+                      (SELECT name FROM type_names WHERE type_id = type_efficacy.target_type_id AND local_language_id = 9) AS name_two,
+                      type_efficacy.damage_factor
+               FROM type_efficacy
+               JOIN type_names AS type_one ON type_one.type_id = type_efficacy.damage_type_id AND type_one.local_language_id = 9
+               JOIN type_names AS type_two ON type_two.type_id = type_efficacy.target_type_id AND type_two.local_language_id = 9
+               WHERE type_efficacy.damage_type_id = (SELECT type_id FROM type_names WHERE name = ?)
+                     AND type_efficacy.target_type_id = (SELECT type_id FROM type_names WHERE name = ?)""", types)
 
 module.exports =
     init: (client, imports) ->
@@ -105,7 +130,7 @@ module.exports =
                         unless moveid[0]?
                             "'#{joined}' does not end in a valid move!"
                         else unless pokemonid[0]?
-                            "#{joined} does not end in a valid Pokémon!"
+                            "#{joined} does not begin with a valid Pokémon!"
                         else
                             getLearnMethods(moveid[0].move_id, pokemonid[0].pokemon_species_id)
                             .then((rows) ->
@@ -206,4 +231,33 @@ module.exports =
                     else
                         "'#{joined}' is not a valid Pokemon."
 
-                # TODO implement $type, $types
+            "!type": (command) ->
+                switch command.args.length
+                    when 0
+                        "Please specify at least ony type."
+                    when 1, 2
+                        getTypesEfficiency(command.args)
+                        .then (rows) ->
+                            sorted = _.groupBy(rows, "damage_factor")
+                            """#{if sorted[400]? then "4x weak to: #{_.map(sorted[400], "name").join(", ")}; " else ""}\
+                               #{if sorted[200]? then "2x weak to: #{_.map(sorted[200], "name").join(", ")}; " else ""}\
+                               #{if sorted[25]? then "4x resistant against: #{_.map(sorted[25], "name").join(", ")}; " else ""}\
+                               #{if sorted[50]? then "2x resistant against: #{_.map(sorted[50], "name").join(", ")}; " else ""}\
+                               #{if sorted[0]? then "completely resistant against: #{_.map(sorted[0], "name").join(", ")}" else ""}"""
+                            # TODO no damage
+                    else
+                        "Please specify no more than two types."
+
+            "!types": (command) ->
+                if command.args.length == 2
+                    getTypeEfficiency(command.args)
+                    .then (rows) ->
+                        e = rows[0]
+                        damageTypes =
+                            0: "no"
+                            50: "not very effective"
+                            100: "neutral"
+                            200: "super effective"
+                        "#{e.name_one} deals #{damageTypes[e.damage_factor]} damage against #{e.name_two}."
+                else
+                    "Please specify exactly two types."
