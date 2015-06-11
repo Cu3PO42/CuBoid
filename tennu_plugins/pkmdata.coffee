@@ -233,7 +233,7 @@ module.exports =
                                        #{calcStat(e.spdef, evs.spdef, 5)}/\
                                        #{calcStat(e.spd, evs.spd, 6)}"""
                                 level = 100
-                                if m = command.message.match(/lvl?\s*(\d+)/i)
+                                if m = command.message.match(/(?:lvl?|level)\s*(\d+)/i)
                                     level = parseInt(m[1])
                                 natureparser = /(hardy|bold|modest|calm|timid|lonely|docile|mild|gentle|hasty|adamant|impish|bashful|careful|rash|jolly|naughty|lax|quirky|naive|brave|relaxed|quiet|sassy|serious)/i
                                 evparser = /(\d+)\s*(hp|atk|def|spatk|spdef|spd)/ig
