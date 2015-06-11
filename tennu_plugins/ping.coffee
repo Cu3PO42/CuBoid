@@ -9,4 +9,5 @@ module.exports =
                 ' '
                 'Responds \"PONG\" to ping.'
             ]
+
         commands: ['ping']

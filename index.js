@@ -1,14 +1,5 @@
 require('coffee-script/register');
-var waterline = require('./waterline-bootstrap'),
-    _ = require('lodash');
-
-waterline.orm.initialize(waterline.config, function(err, models) {
-    _.extend(waterline.models, models);
-    var config = require('./config'),
-        local = require('./local');
-    _.extend(config, local);
-    run(config);
-});
+var _ = require('lodash');
 
 function run(config) {
     var Client = require('tennu').Client;
@@ -54,6 +45,7 @@ function run(config) {
     var onabort = function self() {
         if (!self.attemptedToQuitAlready) {
             client.quit('Bot terminated.');
+            self.attemptedToQuitAlready = true;
         } else {
             process.exit(1);
         }
@@ -64,3 +56,10 @@ function run(config) {
     process.on('SIGABRT', onabort);
     process.on('SIGTERM', onabort);
 }
+
+var config = require('./config'),
+    local = require('./local');
+
+_.extend(config, local);
+
+run(config);

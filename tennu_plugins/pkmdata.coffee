@@ -1,159 +1,155 @@
-pool = require '../veekun'
+mysql = require '../mysql-bootstrap'
 Promise = require 'bluebird'
 _ = require 'lodash'
 
-execSql = (sql, replacement) ->
-    pool.getConnectionAsync()
-    .then (connection) ->
-        [connection, connection.queryAsync(sql, replacement)]
-    .spread (connection, rows) ->
-        connection.release()
-        rows[0]
-
-getMoveIdName = (name) ->
-    execSql("""SELECT move_id, name FROM move_names WHERE local_language_id = 9 AND move_id =
-                  (SELECT DISTINCT move_id FROM move_names WHERE ? LIKE concat('% ', name) ORDER BY LENGTH(name) DESC LIMIT 1)""", [name])
-
-getSpeciesIdName = (name) ->
-    execSql("""SELECT pokemon_species_id, name FROM pokemon_species_names WHERE local_language_id = 9
-                   AND pokemon_species_id = (SELECT DISTINCT pokemon_species_id FROM pokemon_species_names WHERE
-                   ? LIKE concat(name, ' %'))""", [name])
-
-getPreviousEvolution = (id) ->
-    execSql("""SELECT pokemon_species.evolves_from_species_id, pokemon_species_names.name
-               FROM pokemon_species
-               LEFT JOIN pokemon_species_names ON pokemon_species_names.pokemon_species_id = pokemon_species.evolves_from_species_id AND pokemon_species_names.local_language_id = 9
-               WHERE pokemon_species.id = ?""", [id])
-
-getLearnMethods = (moveid, pokemonid, pokemonname) ->
-    execSql("""SELECT DISTINCT pokemon_move_method_prose.name, pokemon_moves.level, pokemon_moves.pokemon_move_method_id
-               FROM pokemon_move_method_prose
-               JOIN pokemon_moves ON pokemon_moves.pokemon_move_method_id = pokemon_move_method_prose.pokemon_move_method_id
-                    AND pokemon_moves.move_id = ? AND pokemon_moves.pokemon_id = ? AND pokemon_moves.version_group_id = 15
-               WHERE pokemon_move_method_prose.local_language_id = 9""", [moveid, pokemonid])
-    .then (rows) ->
-        [levelUp, other] = _.partition(rows, (e) -> e.pokemon_move_method_id == 1)
-        res = {}
-        if levelUp.length
-            res[1] = pokemon: pokemonname, name: levelUp[0].name, levels: _.map(levelUp, "level")
-        for e in other
-            res[e.pokemon_move_method_id] = pokemon: pokemonname, name: e.name
-        res
-
-getAbilityInfo = (name) ->
-    execSql("""SELECT ability_names.name, ability_prose.effect FROM ability_prose
-               JOIN ability_names ON ability_prose.ability_id = ability_names.ability_id
-                   AND ability_names.ability_id =
-                       (SELECT DISTINCT ability_id FROM ability_names WHERE name = ?)
-               WHERE ability_prose.local_language_id = 9 AND ability_names.local_language_id = 9""", [name])
-
-getMoveData = (name) ->
-    execSql("""SELECT move_names.name AS move_name, move_damage_classes.identifier AS damage_class,
-                      type_names.name AS type_name, moves.power, moves.accuracy, moves.pp,
-                      move_effect_prose.short_effect
-               FROM moves
-               JOIN move_names ON move_names.move_id = moves.id AND move_names.local_language_id = 9
-               JOIN move_damage_classes ON move_damage_classes.id = moves.damage_class_id
-               JOIN type_names ON moves.type_id = type_names.type_id AND type_names.local_language_id = 9
-               JOIN move_effect_prose ON moves.effect_id = move_effect_prose.move_effect_id
-                    AND move_effect_prose.local_language_id = 9
-               WHERE moves.id = (SELECT DISTINCT move_id FROM move_names WHERE name = ?)""", [name])
-
-getPokemonBaseStats = (name) ->
-    execSql("""SELECT pokemon_species_names.name, pokemon.species_id,
-                      (SELECT base_stat FROM pokemon_stats WHERE stat_id = 1 AND pokemon_id = pokemon.species_id) AS hp,
-                      (SELECT base_stat FROM pokemon_stats WHERE stat_id = 2 AND pokemon_id = pokemon.species_id) AS atk,
-                      (SELECT base_stat FROM pokemon_stats WHERE stat_id = 3 AND pokemon_id = pokemon.species_id) AS def,
-                      (SELECT base_stat FROM pokemon_stats WHERE stat_id = 4 AND pokemon_id = pokemon.species_id) AS spatk,
-                      (SELECT base_stat FROM pokemon_stats WHERE stat_id = 5 AND pokemon_id = pokemon.species_id) AS spdef,
-                      (SELECT base_stat FROM pokemon_stats WHERE stat_id = 6 AND pokemon_id = pokemon.species_id) AS spd
-               FROM pokemon
-               JOIN pokemon_species_names ON pokemon_species_names.pokemon_species_id = pokemon.species_id AND pokemon_species_names.local_language_id = 9
-               WHERE pokemon.species_id = (SELECT DISTINCT pokemon_species_id FROM pokemon_species_names WHERE ? LIKE concat(name, '%'))""", [name])
-
-getPokemonTypes = (id) ->
-    execSql("""SELECT type_names.name
-               FROM pokemon_types
-               JOIN type_names ON type_names.type_id = pokemon_types.type_id AND type_names.local_language_id = 9
-               WHERE pokemon_types.pokemon_id = ?
-               ORDER BY pokemon_types.slot""", [id])
-
-getPokemonAbilities = (id) ->
-    execSql("""SELECT ability_names.name, pokemon_abilities.is_hidden, pokemon_abilities.slot
-               FROM pokemon_abilities
-               JOIN ability_names ON ability_names.ability_id = pokemon_abilities.ability_id AND ability_names.local_language_id = 9
-               WHERE pokemon_abilities.pokemon_id = ?
-               ORDER BY pokemon_abilities.slot""", [id])
-
-getNatureModifiers = (name) ->
-    execSql("""SELECT natures.increased_stat_id, natures.decreased_stat_id
-               FROM natures
-               JOIN nature_names ON natures.id = nature_names.nature_id AND nature_names.name = ?""", [name])
-
-getEggdata = (name) ->
-    execSql("""SELECT pokemon.species_id, pokemon_species_names.name, pokemon_species.gender_rate, pokemon_species.hatch_counter
-               FROM pokemon
-               JOIN pokemon_species_names ON pokemon.species_id = pokemon_species_names.pokemon_species_id AND pokemon_species_names.local_language_id = 9
-               JOIN pokemon_species ON pokemon.species_id = pokemon_species.id
-               WHERE pokemon.species_id = (SELECT DISTINCT pokemon_species_id FROM pokemon_species_names WHERE name = ?)""", [name])
-
-getPokemonEggGroups = (id) ->
-    execSql("""SELECT egg_group_prose.name
-               FROM pokemon_egg_groups
-               JOIN egg_group_prose ON pokemon_egg_groups.egg_group_id = egg_group_prose.egg_group_id
-                    AND egg_group_prose.local_language_id = 9
-               WHERE pokemon_egg_groups.species_id = ?""", [id])
-
-getTypesEfficiency = (types) ->
-    if types.length == 1
-        execSql("""SELECT type_names.name, type_efficacy.damage_factor
-                   FROM type_efficacy
-                   JOIN type_names ON type_efficacy.damage_type_id = type_names.type_id AND type_names.local_language_id = 9
-                   WHERE type_efficacy.target_type_id = (SELECT DISTINCT type_id FROM type_names WHERE name = ?)
-                   ORDER BY damage_factor ASC""", types)
-    else
-        execSql("""SELECT type_names.name, (type_one.damage_factor * type_two.damage_factor / 100) AS damage_factor
-                   FROM type_efficacy AS type_one
-                   JOIN type_efficacy AS type_two ON type_one.damage_type_id = type_two.damage_type_id
-                   JOIN type_names ON type_one.damage_type_id = type_names.type_id AND type_names.local_language_id = 9
-                   WHERE type_one.target_type_id = (SELECT DISTINCT type_id FROM type_names WHERE name = ?)
-                         AND type_two.target_type_id = (SELECT DISTINCT type_id FROM type_names WHERE name = ?)
-                   ORDER BY damage_factor ASC""", types)
-
-getTypeEfficiency = (types) ->
-    execSql("""SELECT (SELECT name FROM type_names WHERE type_id = type_efficacy.damage_type_id AND local_language_id = 9) AS name_one,
-                      (SELECT name FROM type_names WHERE type_id = type_efficacy.target_type_id AND local_language_id = 9) AS name_two,
-                      type_efficacy.damage_factor
-               FROM type_efficacy
-               JOIN type_names AS type_one ON type_one.type_id = type_efficacy.damage_type_id AND type_one.local_language_id = 9
-               JOIN type_names AS type_two ON type_two.type_id = type_efficacy.target_type_id AND type_two.local_language_id = 9
-               WHERE type_efficacy.damage_type_id = (SELECT DISTINCT type_id FROM type_names WHERE name = ?)
-                     AND type_efficacy.target_type_id = (SELECT DISTINCT type_id FROM type_names WHERE name = ?)""", types)
-
-getAllLearnMethods = (moveid, speciesid, speciesname) ->
-    Promise.join getLearnMethods(moveid, speciesid, speciesname),
-        getPreviousEvolution(speciesid)
-        .then((previous) ->
-            if previous[0].evolves_from_species_id > 0
-                getAllLearnMethods(moveid, previous[0].evolves_from_species_id, previous[0].name)
-            else
-                {}
-        ), (methods_one, methods_two) ->
-            _.defaults(methods_one, methods_two)
-
-
-parseDescription = (description) ->
-    Promise.resolve description.replace /\[([^\]]*)\]\{([^}]*)\}/g, (match, one, two, offset, string) ->
-        if one != ""
-            one
-        else
-            _.map(two.split(":")[1].split("-"), _.capitalize).join(" ")
-
 module.exports =
     init: (client, imports) ->
+        pool = mysql.createPool(client.config("veekun"))
+        client._socket.on("close", pool.end.bind(pool))
+
+        execSql = pool.execSql.bind(pool)
+
+        getMoveIdName = (name) ->
+            execSql("""SELECT move_id, name FROM move_names WHERE local_language_id = 9 AND move_id =
+                          (SELECT DISTINCT move_id FROM move_names WHERE ? LIKE concat('% ', name) ORDER BY LENGTH(name) DESC LIMIT 1)""", [name])
+
+        getSpeciesIdName = (name) ->
+            execSql("""SELECT pokemon_species_id, name FROM pokemon_species_names WHERE local_language_id = 9
+                           AND pokemon_species_id = (SELECT DISTINCT pokemon_species_id FROM pokemon_species_names WHERE
+                           ? LIKE concat(name, ' %'))""", [name])
+
+        getPreviousEvolution = (id) ->
+            execSql("""SELECT pokemon_species.evolves_from_species_id, pokemon_species_names.name
+                       FROM pokemon_species
+                       LEFT JOIN pokemon_species_names ON pokemon_species_names.pokemon_species_id = pokemon_species.evolves_from_species_id AND pokemon_species_names.local_language_id = 9
+                       WHERE pokemon_species.id = ?""", [id])
+
+        getLearnMethods = (moveid, pokemonid, pokemonname) ->
+            execSql("""SELECT DISTINCT pokemon_move_method_prose.name, pokemon_moves.level, pokemon_moves.pokemon_move_method_id
+                       FROM pokemon_move_method_prose
+                       JOIN pokemon_moves ON pokemon_moves.pokemon_move_method_id = pokemon_move_method_prose.pokemon_move_method_id
+                            AND pokemon_moves.move_id = ? AND pokemon_moves.pokemon_id IN (SELECT id FROM pokemon WHERE species_id = ?) AND pokemon_moves.version_group_id = 15
+                       WHERE pokemon_move_method_prose.local_language_id = 9""", [moveid, pokemonid])
+            .then (rows) ->
+                [levelUp, other] = _.partition(rows, (e) -> e.pokemon_move_method_id == 1)
+                res = {}
+                if levelUp.length
+                    res[1] = pokemon: pokemonname, name: levelUp[0].name, levels: _.map(levelUp, "level")
+                for e in other
+                    res[e.pokemon_move_method_id] = pokemon: pokemonname, name: e.name
+                res
+
+        getAbilityInfo = (name) ->
+            execSql("""SELECT ability_names.name, ability_prose.effect FROM ability_prose
+                       JOIN ability_names ON ability_prose.ability_id = ability_names.ability_id
+                           AND ability_names.ability_id =
+                               (SELECT DISTINCT ability_id FROM ability_names WHERE name = ?)
+                       WHERE ability_prose.local_language_id = 9 AND ability_names.local_language_id = 9""", [name])
+
+        getMoveData = (name) ->
+            execSql("""SELECT move_names.name AS move_name, move_damage_classes.identifier AS damage_class,
+                              type_names.name AS type_name, moves.power, moves.accuracy, moves.pp,
+                              move_effect_prose.short_effect
+                       FROM moves
+                       JOIN move_names ON move_names.move_id = moves.id AND move_names.local_language_id = 9
+                       JOIN move_damage_classes ON move_damage_classes.id = moves.damage_class_id
+                       JOIN type_names ON moves.type_id = type_names.type_id AND type_names.local_language_id = 9
+                       JOIN move_effect_prose ON moves.effect_id = move_effect_prose.move_effect_id
+                            AND move_effect_prose.local_language_id = 9
+                       WHERE moves.id = (SELECT DISTINCT move_id FROM move_names WHERE name = ?)""", [name])
+
+        getPokemonBaseStats = (name) ->
+            execSql("""SELECT pokemon_species_names.name, pokemon.species_id,
+                              (SELECT base_stat FROM pokemon_stats WHERE stat_id = 1 AND pokemon_id = pokemon.species_id) AS hp,
+                              (SELECT base_stat FROM pokemon_stats WHERE stat_id = 2 AND pokemon_id = pokemon.species_id) AS atk,
+                              (SELECT base_stat FROM pokemon_stats WHERE stat_id = 3 AND pokemon_id = pokemon.species_id) AS def,
+                              (SELECT base_stat FROM pokemon_stats WHERE stat_id = 4 AND pokemon_id = pokemon.species_id) AS spatk,
+                              (SELECT base_stat FROM pokemon_stats WHERE stat_id = 5 AND pokemon_id = pokemon.species_id) AS spdef,
+                              (SELECT base_stat FROM pokemon_stats WHERE stat_id = 6 AND pokemon_id = pokemon.species_id) AS spd
+                       FROM pokemon
+                       JOIN pokemon_species_names ON pokemon_species_names.pokemon_species_id = pokemon.species_id AND pokemon_species_names.local_language_id = 9
+                       WHERE pokemon.species_id = (SELECT DISTINCT pokemon_species_id FROM pokemon_species_names WHERE ? LIKE concat(name, '%'))""", [name])
+
+        getPokemonTypes = (id) ->
+            execSql("""SELECT type_names.name
+                       FROM pokemon_types
+                       JOIN type_names ON type_names.type_id = pokemon_types.type_id AND type_names.local_language_id = 9
+                       WHERE pokemon_types.pokemon_id = ?
+                       ORDER BY pokemon_types.slot""", [id])
+
+        getPokemonAbilities = (id) ->
+            execSql("""SELECT ability_names.name, pokemon_abilities.is_hidden, pokemon_abilities.slot
+                       FROM pokemon_abilities
+                       JOIN ability_names ON ability_names.ability_id = pokemon_abilities.ability_id AND ability_names.local_language_id = 9
+                       WHERE pokemon_abilities.pokemon_id = ?
+                       ORDER BY pokemon_abilities.slot""", [id])
+
+        getNatureModifiers = (name) ->
+            execSql("""SELECT natures.increased_stat_id, natures.decreased_stat_id
+                       FROM natures
+                       JOIN nature_names ON natures.id = nature_names.nature_id AND nature_names.name = ?""", [name])
+
+        getEggdata = (name) ->
+            execSql("""SELECT pokemon.species_id, pokemon_species_names.name, pokemon_species.gender_rate, pokemon_species.hatch_counter
+                       FROM pokemon
+                       JOIN pokemon_species_names ON pokemon.species_id = pokemon_species_names.pokemon_species_id AND pokemon_species_names.local_language_id = 9
+                       JOIN pokemon_species ON pokemon.species_id = pokemon_species.id
+                       WHERE pokemon.species_id = (SELECT DISTINCT pokemon_species_id FROM pokemon_species_names WHERE name = ?)""", [name])
+
+        getPokemonEggGroups = (id) ->
+            execSql("""SELECT egg_group_prose.name
+                       FROM pokemon_egg_groups
+                       JOIN egg_group_prose ON pokemon_egg_groups.egg_group_id = egg_group_prose.egg_group_id
+                            AND egg_group_prose.local_language_id = 9
+                       WHERE pokemon_egg_groups.species_id = ?""", [id])
+
+        getTypesEfficiency = (types) ->
+            if types.length == 1
+                execSql("""SELECT type_names.name, type_efficacy.damage_factor
+                           FROM type_efficacy
+                           JOIN type_names ON type_efficacy.damage_type_id = type_names.type_id AND type_names.local_language_id = 9
+                           WHERE type_efficacy.target_type_id = (SELECT DISTINCT type_id FROM type_names WHERE name = ?)
+                           ORDER BY damage_factor ASC""", types)
+            else
+                execSql("""SELECT type_names.name, (type_one.damage_factor * type_two.damage_factor / 100) AS damage_factor
+                           FROM type_efficacy AS type_one
+                           JOIN type_efficacy AS type_two ON type_one.damage_type_id = type_two.damage_type_id
+                           JOIN type_names ON type_one.damage_type_id = type_names.type_id AND type_names.local_language_id = 9
+                           WHERE type_one.target_type_id = (SELECT DISTINCT type_id FROM type_names WHERE name = ?)
+                                 AND type_two.target_type_id = (SELECT DISTINCT type_id FROM type_names WHERE name = ?)
+                           ORDER BY damage_factor ASC""", types)
+
+        getTypeEfficiency = (types) ->
+            execSql("""SELECT (SELECT name FROM type_names WHERE type_id = type_efficacy.damage_type_id AND local_language_id = 9) AS name_one,
+                              (SELECT name FROM type_names WHERE type_id = type_efficacy.target_type_id AND local_language_id = 9) AS name_two,
+                              type_efficacy.damage_factor
+                       FROM type_efficacy
+                       JOIN type_names AS type_one ON type_one.type_id = type_efficacy.damage_type_id AND type_one.local_language_id = 9
+                       JOIN type_names AS type_two ON type_two.type_id = type_efficacy.target_type_id AND type_two.local_language_id = 9
+                       WHERE type_efficacy.damage_type_id = (SELECT DISTINCT type_id FROM type_names WHERE name = ?)
+                             AND type_efficacy.target_type_id = (SELECT DISTINCT type_id FROM type_names WHERE name = ?)""", types)
+
+        getAllLearnMethods = (moveid, speciesid, speciesname) ->
+            Promise.join getLearnMethods(moveid, speciesid, speciesname),
+                getPreviousEvolution(speciesid)
+                .then((previous) ->
+                    if previous[0].evolves_from_species_id > 0
+                        getAllLearnMethods(moveid, previous[0].evolves_from_species_id, previous[0].name)
+                    else
+                        {}
+                ), (methods_one, methods_two) ->
+                    _.defaults(methods_one, methods_two)
+
+
+        parseDescription = (description) ->
+            Promise.resolve description.replace /\[([^\]]*)\]\{([^}]*)\}/g, (match, one, two, offset, string) ->
+                if one != ""
+                    one
+                else
+                    _.map(two.split(":")[1].split("-"), _.capitalize).join(" ")
+
         handlers:
             "!learn": (command) ->
-                # TODO consider forms
                 joined = command.args.join(" ")
                 Promise.join(
                     getMoveIdName(joined)
@@ -306,6 +302,7 @@ module.exports =
                 "learn <pokemon> <move>"
                 " "
                 "Will tell you if and how a Pokémon can learn a move."
+                "Unfortunately the underlying database does not contain information about Event only moves and those that can only be learnt on ORAS at this point."
             ]
 
             "ability": [
