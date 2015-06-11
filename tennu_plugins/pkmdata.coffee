@@ -5,7 +5,8 @@ _ = require 'lodash'
 module.exports =
     init: (client, imports) ->
         pool = mysql.createPool(client.config("veekun"))
-        client._socket.on("close", pool.end.bind(pool))
+        client._socket.on "close", ->
+            pool.end(_.noop)
 
         execSql = pool.execSql.bind(pool)
 

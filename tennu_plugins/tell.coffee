@@ -1,11 +1,13 @@
 mysql = require '../mysql-bootstrap'
 moment = require 'moment'
 Promise = require 'bluebird'
+_ = require 'lodash'
 
 module.exports =
     init: (client, imports) ->
         pool = mysql.createPool(client.config("tell-database"))
-        client._socket.on("close", pool.end.bind(pool))
+        client._socket.on "close", ->
+            pool.end(_.noop)
 
         messageExtractor = /.tell\s*\S+\s*(.*)$/
 

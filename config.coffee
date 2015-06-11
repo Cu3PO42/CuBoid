@@ -4,7 +4,7 @@ module.exports =
     "nicknames": ["CuBoid"],
     "username": "CuBoid",
     "realname": "Cu's Bot",
-    "channels": ["#cuboid"],
+    "channels": ["#cuboid", "#typegame"],
     "nickserv": "nickserv",
     "plugins": ["enable", "admin", "ping", "npr", "fhf", "calc", "tell", "control", "typegame", "pkmdata"],
     "command-trigger": "$",
@@ -15,5 +15,5 @@ module.exports =
     ]
     "enabled":
         "typegame":
-            "#TypeGame": true
+            "#typegame": true
 
