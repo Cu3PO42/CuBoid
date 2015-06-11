@@ -26,16 +26,17 @@ module.exports =
                        WHERE pokemon_species.id = ?""", [id])
 
         getLearnMethods = (moveid, pokemonid, pokemonname) ->
-            execSql("""SELECT DISTINCT pokemon_move_method_prose.name, pokemon_moves.level, pokemon_moves.pokemon_move_method_id
+            execSql("""SELECT DISTINCT pokemon_move_method_prose.name, pokemon_moves.level, pokemon_moves.pokemon_move_method_id, pokemon_moves.version_group_id
                        FROM pokemon_move_method_prose
                        JOIN pokemon_moves ON pokemon_moves.pokemon_move_method_id = pokemon_move_method_prose.pokemon_move_method_id
-                            AND pokemon_moves.move_id = ? AND pokemon_moves.pokemon_id IN (SELECT id FROM pokemon WHERE species_id = ?) AND pokemon_moves.version_group_id = 15
-                       WHERE pokemon_move_method_prose.local_language_id = 9""", [moveid, pokemonid])
+                            AND pokemon_moves.move_id = ? AND pokemon_moves.pokemon_id IN (SELECT id FROM pokemon WHERE species_id = ?)
+                       WHERE pokemon_move_method_prose.local_language_id = 9
+                       ORDER BY pokemon_moves.version_group_id DESC""", [moveid, pokemonid])
             .then (rows) ->
                 [levelUp, other] = _.partition(rows, (e) -> e.pokemon_move_method_id == 1)
                 res = {}
                 if levelUp.length
-                    res[1] = pokemon: pokemonname, name: levelUp[0].name, levels: _.map(levelUp, "level")
+                    res[1] = pokemon: pokemonname, name: levelUp[0].name, levels: _.map(_.takeWhile(levelUp, (e) -> e.version_group_id == levelUp[0].version_group_id), "level")
                 for e in other
                     res[e.pokemon_move_method_id] = pokemon: pokemonname, name: e.name
                 res
@@ -303,7 +304,8 @@ module.exports =
                 "learn <pokemon> <move>"
                 " "
                 "Will tell you if and how a Pokémon can learn a move."
-                "Unfortunately the underlying database does not contain information about Event only moves and those that can only be learnt on ORAS at this point."
+                "Unfortunately the underlying database does not contain information about Event only moves, those that can only be obtained from XD and those that can only be learnt on ORAS at this point."
+                "False negatives are possible in those cases."
             ]
 
             "ability": [

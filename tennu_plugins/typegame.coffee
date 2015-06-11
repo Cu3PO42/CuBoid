@@ -814,7 +814,7 @@ module.exports =
                     cache.running = false
                     runningCache[channel].pop()
                     "Correct! #{nick} wins this round!"
-                else
+                else if pokemon_dict[guess.toLowerCase()]?
                     "Sorry, that's not right."
             else
                 "Sorry, a game is not currently running."
@@ -891,6 +891,6 @@ module.exports =
                 "Make the given guess for the currently running 'scramble' round."
             ]
 
-        commands: ["typegame", "scramble", "guess", "scramble"]
+        commands: ["typegame", "scramble", "guess", "unscramble"]
 
     requires: ["enable"]

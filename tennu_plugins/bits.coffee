@@ -3,6 +3,10 @@ module.exports =
         handlers:
             '!ping': (command) ->
                 "PONG"
+
+            "!docs": (command) ->
+                "https://github.com/Cu3PO42/CuBoid/wiki"
+
         help:
             'ping': [
                 'ping'
@@ -10,4 +14,10 @@ module.exports =
                 'Responds \"PONG\" to ping.'
             ]
 
-        commands: ['ping']
+            "docs": [
+                "docs"
+                " "
+                "Links to the docs."
+            ]
+
+        commands: ['ping', "docs"]
