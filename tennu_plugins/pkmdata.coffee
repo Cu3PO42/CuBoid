@@ -19,12 +19,26 @@ getSpeciesIdName = (name) ->
                    AND pokemon_species_id = (SELECT DISTINCT pokemon_species_id FROM pokemon_species_names WHERE
                    ? LIKE concat(name, ' %'))""", [name])
 
-getLearnMethods = (moveid, pokemonid) ->
-    execSql("""SELECT DISTINCT pokemon_move_method_prose.name
+getPreviousEvolution = (id) ->
+    execSql("""SELECT pokemon_species.evolves_from_species_id, pokemon_species_names.name
+               FROM pokemon_species
+               LEFT JOIN pokemon_species_names ON pokemon_species_names.pokemon_species_id = pokemon_species.evolves_from_species_id AND pokemon_species_names.local_language_id = 9
+               WHERE pokemon_species.id = ?""", [id])
+
+getLearnMethods = (moveid, pokemonid, pokemonname) ->
+    execSql("""SELECT DISTINCT pokemon_move_method_prose.name, pokemon_moves.level, pokemon_moves.pokemon_move_method_id
                FROM pokemon_move_method_prose
                JOIN pokemon_moves ON pokemon_moves.pokemon_move_method_id = pokemon_move_method_prose.pokemon_move_method_id
-                    AND pokemon_moves.move_id = ? AND pokemon_moves.pokemon_id = ?
+                    AND pokemon_moves.move_id = ? AND pokemon_moves.pokemon_id = ? AND pokemon_moves.version_group_id = 15
                WHERE pokemon_move_method_prose.local_language_id = 9""", [moveid, pokemonid])
+    .then (rows) ->
+        [levelUp, other] = _.partition(rows, (e) -> e.pokemon_move_method_id == 1)
+        res = {}
+        if levelUp.length
+            res[1] = pokemon: pokemonname, name: levelUp[0].name, levels: _.map(levelUp, "level")
+        for e in other
+            res[e.pokemon_move_method_id] = pokemon: pokemonname, name: e.name
+        res
 
 getAbilityInfo = (name) ->
     execSql("""SELECT ability_names.name, ability_prose.effect FROM ability_prose
@@ -116,6 +130,18 @@ getTypeEfficiency = (types) ->
                WHERE type_efficacy.damage_type_id = (SELECT DISTINCT type_id FROM type_names WHERE name = ?)
                      AND type_efficacy.target_type_id = (SELECT DISTINCT type_id FROM type_names WHERE name = ?)""", types)
 
+getAllLearnMethods = (moveid, speciesid, speciesname) ->
+    Promise.join getLearnMethods(moveid, speciesid, speciesname),
+        getPreviousEvolution(speciesid)
+        .then((previous) ->
+            if previous[0].evolves_from_species_id > 0
+                getAllLearnMethods(moveid, previous[0].evolves_from_species_id, previous[0].name)
+            else
+                {}
+        ), (methods_one, methods_two) ->
+            _.defaults(methods_one, methods_two)
+
+
 parseDescription = (description) ->
     Promise.resolve description.replace /\[([^\]]*)\]\{([^}]*)\}/g, (match, one, two, offset, string) ->
         if one != ""
@@ -127,8 +153,7 @@ module.exports =
     init: (client, imports) ->
         handlers:
             "!learn": (command) ->
-                # TODO Search previous evolutions.
-                # TODO Improve output, i.e. add level and stuff
+                # TODO consider forms
                 joined = command.args.join(" ")
                 Promise.join(
                     getMoveIdName(joined)
@@ -139,13 +164,19 @@ module.exports =
                         else unless pokemonid[0]?
                             "#{joined} does not begin with a valid Pokémon!"
                         else
-                            getLearnMethods(moveid[0].move_id, pokemonid[0].pokemon_species_id)
-                            .then((rows) ->
-                                if rows.length > 0
-                                    "#{pokemonid[0].name} can learn #{moveid[0].name} via #{_.map(rows, (e) -> e.name).join(", ")}."
+                            getAllLearnMethods(moveid[0].move_id, pokemonid[0].pokemon_species_id, pokemonid[0].name)
+                            .then (methods) ->
+                                unless _.isEmpty(methods)
+                                    methodString = _.map methods, (e) ->
+                                        (if e.name == "Level up"
+                                            "Level up at level #{e.levels.join("/")}"
+                                        else
+                                            e.name
+                                        ) + (if e.pokemon != pokemonid[0].name then " as #{e.pokemon}" else "")
+                                    .join(", ")
+                                    "#{pokemonid[0].name} can learn #{moveid[0].name} via #{methodString}."
                                 else
                                     "#{pokemonid[0].name} cannot learn #{moveid[0].name}."
-                            )
                 )
 
             "!ability": (command) ->
