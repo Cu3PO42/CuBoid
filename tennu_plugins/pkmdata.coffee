@@ -79,6 +79,14 @@ module.exports =
                        WHERE pokemon_types.pokemon_id = ?
                        ORDER BY pokemon_types.slot""", [id])
 
+        getPokemonTypesByName = (pokemonname) ->
+            execSql("""SELECT DISTINCT type_names.name
+                       FROM pokemon_types
+                       JOIN pokemon_species_names ON pokemon_species_names.pokemon_species_id = pokemon_types.pokemon_id
+                            AND pokemon_species_names.name = ?
+                       JOIN type_names ON type_names.type_id = pokemon_types.type_id AND type_names.local_language_id = 9
+                       ORDER BY pokemon_types.slot""", [pokemonname])
+
         getPokemonAbilities = (id) ->
             execSql("""SELECT ability_names.name, pokemon_abilities.is_hidden, pokemon_abilities.slot
                        FROM pokemon_abilities
@@ -270,11 +278,19 @@ module.exports =
 
             "!type": (command) ->
                 # TODO nicer formatting
+                # TODO Refactor SQL?
                 switch command.args.length
                     when 0
                         "Please specify at least ony type."
                     when 1, 2
                         getTypesEfficiency(command.args)
+                        .then (rows) ->
+                            if rows.length
+                                rows
+                            else
+                                getPokemonTypesByName(command.args.join(" "))
+                                .then (rows) ->
+                                    getTypesEfficiency(_.map(rows, "name"))
                         .then (rows) ->
                             sorted = _.groupBy(rows, "damage_factor")
                             """#{if sorted[400]? then "4x weak to: #{_.map(sorted[400], "name").join(", ")}; " else ""}\
