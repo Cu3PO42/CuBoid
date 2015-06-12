@@ -50,7 +50,7 @@ module.exports =
 
         getMoveData = (name) ->
             execSql("""SELECT move_names.name AS move_name, move_damage_classes.identifier AS damage_class,
-                              type_names.name AS type_name, moves.power, moves.accuracy, moves.pp,
+                              type_names.name AS type_name, moves.power, moves.accuracy, moves.pp, moves.priority,
                               move_effect_prose.short_effect
                        FROM moves
                        JOIN move_names ON move_names.move_id = moves.id AND move_names.local_language_id = 9
@@ -207,7 +207,7 @@ module.exports =
                     e = rows[0]
                     if e?
                         [
-                            "[#{e.move_name}] Category: #{_.capitalize(e.damage_class)} | Type: #{e.type_name} | BP: #{if e.bp then e.bp else '--'} | Acc: #{if e.accuracy then "#{e.accuracy}%" else '--'} | PP: #{e.pp} (#{e.pp*8/5})"
+                            "[#{e.move_name}] Category: #{_.capitalize(e.damage_class)} | Type: #{e.type_name} | Priority: #{e.priority} | BP: #{if e.bp then e.bp else '--'} | Acc: #{if e.accuracy then "#{e.accuracy}%" else '--'} | PP: #{e.pp} (#{e.pp*8/5})"
                             e.short_effect
                         ]
                     else
