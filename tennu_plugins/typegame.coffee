@@ -1,4 +1,5 @@
 _ = require 'lodash'
+moment = require 'moment'
 
 pokemon_array = [
     { name: 'Bulbasaur', types: [ 'Grass', 'Poison' ] },
@@ -848,8 +849,10 @@ module.exports =
                 else
                     (runningCache[command.channel] = runningCache[command.channel] || []).push("scramble")
                     cache.running = true
-                    cache.name = _.sample(pokemon_array).name.toUpperCase()
-                    cache.scrambled = _.shuffle(cache.name).join(" ")
+                    cache.name = _.sample(pokemon_array).name
+                    cache.scrambled = _.shuffle(cache.name.toUpperCase()).join(" ")
+                    cache.end = moment()
+                    cache.end.add(3, 'm')
                     "Unscramble this name: #{cache.scrambled}"
 
             "!guess": enabler.enabled (command) ->
@@ -857,6 +860,18 @@ module.exports =
 
             "!unscramble": enabler.enabled (command) ->
                 guessScramble(command.channel, command.nickname, command.args.join(" ")) if command.args[0]?
+
+            "!solvescramble": enabler.enabled (command) ->
+                cache = scrambleCache[command.channel] = scrambleCache[command.channel] || {}
+                if cache.running
+                    now = moment()
+                    if now.isAfter(cache.end)
+                        cache.running = false
+                        _.remove(runningCache[channel], (e) -> e == "scramble")
+                        "The result is #{cache.name}."
+                    else
+                        "I will solve this scramble #{now.to(cache.end)}."
+
 
             privmsg: enabler.enabled (message) ->
                 trimmed = message.message.trim().replace(/ +/, " ")
@@ -891,6 +906,12 @@ module.exports =
                 "Make the given guess for the currently running 'scramble' round."
             ]
 
-        commands: ["typegame", "scramble", "guess", "unscramble"]
+            "solvescramble": [
+                "solvescramble"
+                " "
+                "Solve the current scramble game. Becomes available 3 minustes after scramble was started."
+            ]
+
+        commands: ["typegame", "scramble", "guess", "unscramble", "solvescramble"]
 
     requires: ["enable"]

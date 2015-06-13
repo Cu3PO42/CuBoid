@@ -351,9 +351,10 @@ module.exports =
 
             "type": [
                 "type <type> [type]"
+                "type <pokemon>"
                 " "
-                "You can specify either one or two types."
-                "Return a list of what types are effective, not very effective, etc. against the given types."
+                "You can specify either one or two types or a single Pokemon.."
+                "Return a list of what types are effective, not very effective, etc. against the given types or Pokemon."
             ]
 
             "types": [
