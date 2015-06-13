@@ -867,7 +867,7 @@ module.exports =
                     now = moment()
                     if now.isAfter(cache.end)
                         cache.running = false
-                        _.remove(runningCache[channel], (e) -> e == "scramble")
+                        _.remove(runningCache[command.channel], (e) -> e == "scramble")
                         "The result is #{cache.name}."
                     else
                         "I will solve this scramble #{now.to(cache.end)}."
