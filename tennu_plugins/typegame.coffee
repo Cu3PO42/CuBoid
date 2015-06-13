@@ -788,7 +788,7 @@ module.exports =
                             cnt = cache.userCount[nick] = cache.userCount[nick] + 1 || 1
                             if cnt == cache.cnt
                                 cache.running = false
-                                runningCache[channel].pop()
+                                _.remove(runningCache[channel], (e) -> e == "typegame")
                                 "Correct! #{nick} wins this round!"
                             else if _.size(cache.guessed) == cache.max
                                 maxUsers = [{count: 0}]
@@ -812,7 +812,7 @@ module.exports =
             if cache.running
                 if guess.toLowerCase() == cache.name.toLowerCase()
                     cache.running = false
-                    runningCache[channel].pop()
+                    _.remove(runningCache[channel], (e) -> e == "scramble")
                     "Correct! #{nick} wins this round!"
                 else if pokemon_dict[guess.toLowerCase()]?
                     "Sorry, that's not right."
@@ -856,7 +856,7 @@ module.exports =
                 guessType(command.channel, command.nickname, command.args.join(" ")) if command.args[0]?
 
             "!unscramble": enabler.enabled (command) ->
-                guessScramble(command.channel, command.nickname, command.join(" ")) if command.args[0]?
+                guessScramble(command.channel, command.nickname, command.args.join(" ")) if command.args[0]?
 
             privmsg: enabler.enabled (message) ->
                 trimmed = message.message.trim().replace(/ +/, " ")

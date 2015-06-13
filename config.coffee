@@ -4,7 +4,6 @@ module.exports =
     "nicknames": ["CuBoid"],
     "username": "CuBoid",
     "realname": "Cu's Bot",
-    "channels": ["#cuboid", "#typegame", "#pokemontrades", "#svexchange", "#pokelist"],
     "nickserv": "nickserv",
     "plugins": ["enable", "admin", "bits", "npr", "fhf", "calc", "tell", "control", "typegame", "pkmdata"],
     "command-trigger": "$",
