@@ -220,7 +220,7 @@ module.exports =
                     e = rows[0]
                     if e?
                         [
-                            "[#{e.move_name}] Category: #{_.capitalize(e.damage_class)} | Type: #{e.type_name} | Priority: #{e.priority} | BP: #{if e.bp then e.bp else '--'} | Acc: #{if e.accuracy then "#{e.accuracy}%" else '--'} | PP: #{e.pp} (#{e.pp*8/5})"
+                            "[#{e.move_name}] Category: #{_.capitalize(e.damage_class)} | Type: #{e.type_name} | Priority: #{e.priority} | BP: #{if e.power then e.power else '--'} | Acc: #{if e.accuracy then "#{e.accuracy}%" else '--'} | PP: #{e.pp} (#{e.pp*8/5})"
                             parseMoveDescription(e)
                         ]
                     else
