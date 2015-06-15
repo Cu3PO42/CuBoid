@@ -51,13 +51,15 @@ module.exports =
         getMoveData = (name) ->
             execSql("""SELECT move_names.name AS move_name, move_damage_classes.identifier AS damage_class,
                               type_names.name AS type_name, moves.power, moves.accuracy, moves.pp, moves.priority,
-                              move_effect_prose.short_effect
+                              move_effect_prose.short_effect, move_meta.meta_category_id, move_meta.ailment_chance,
+                              move_meta.flinch_chance, move_meta.stat_chance
                        FROM moves
                        JOIN move_names ON move_names.move_id = moves.id AND move_names.local_language_id = 9
                        JOIN move_damage_classes ON move_damage_classes.id = moves.damage_class_id
                        JOIN type_names ON moves.type_id = type_names.type_id AND type_names.local_language_id = 9
                        JOIN move_effect_prose ON moves.effect_id = move_effect_prose.move_effect_id
                             AND move_effect_prose.local_language_id = 9
+                       JOIN move_meta ON moves.id = move_meta.move_id
                        WHERE moves.id = (SELECT DISTINCT move_id FROM move_names WHERE name = ?)""", [name])
 
         getPokemonBaseStats = (name) ->
@@ -152,11 +154,22 @@ module.exports =
 
 
         parseDescription = (description) ->
-            Promise.resolve description.replace /\[([^\]]*)\]\{([^}]*)\}/g, (match, one, two, offset, string) ->
+            description.replace /\[([^\]]*)\]\{\w+:([^}]*)\}/g, (match, one, two, offset, string) ->
                 if one != ""
                     one
                 else
-                    _.map(two.split(":")[1].split("-"), _.capitalize).join(" ")
+                    _.map(two.split("-"), _.capitalize).join(" ")
+
+        parseMoveDescription = (move) ->
+            parseDescription(move.short_effect).replace /\$effect_chance%/, (match, one, offset, string) ->
+                switch move.meta_category_id
+                    when 2, 6, 7, 13
+                        "#{move.stat_chance}%"
+                    when 4
+                        "#{move.ailment_chance}%"
+                    when 0
+                        "#{move.ailment_chance||move.flinch_chance}%"
+
 
         handlers:
             "!learn": (command) ->
@@ -208,7 +221,7 @@ module.exports =
                     if e?
                         [
                             "[#{e.move_name}] Category: #{_.capitalize(e.damage_class)} | Type: #{e.type_name} | Priority: #{e.priority} | BP: #{if e.bp then e.bp else '--'} | Acc: #{if e.accuracy then "#{e.accuracy}%" else '--'} | PP: #{e.pp} (#{e.pp*8/5})"
-                            e.short_effect
+                            parseMoveDescription(e)
                         ]
                     else
                         "'#{movename}' is not a valid move."
