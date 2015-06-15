@@ -333,8 +333,8 @@ module.exports =
                 "learn <pokemon> <move>"
                 " "
                 "Will tell you if and how a Pokémon can learn a move."
-                "Unfortunately the underlying database does not contain information about Event only moves and those that can only be learnt on ORAS at this point."
-                "False negatives are possible in those cases."
+                "Unfortunately the underlying database does not contain information about Event only moves."
+                "False negatives are possible in that case."
             ]
 
             "ability": [
