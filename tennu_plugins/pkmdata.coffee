@@ -206,11 +206,9 @@ module.exports =
                 .then((rows) ->
                     e = rows[0]
                     if e?
-                        parseDescription(e.effect)
-                        .then (description) ->
-                            res = description.split("\n")
-                            res[0] = "#{e.name}: #{res[0]}"
-                            res
+                        res = parseDescription(e.effect).split("\n")
+                        res[0] = "#{e.name}: #{res[0]}"
+                        res
                     else
                         "'#{ability}' is not a valid ability."
                 )
