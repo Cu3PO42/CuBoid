@@ -26,20 +26,27 @@ module.exports =
                        WHERE pokemon_species.id = ?""", [id])
 
         getLearnMethods = (moveid, pokemonid, pokemonname) ->
-            execSql("""SELECT DISTINCT pokemon_move_method_prose.name, pokemon_moves.level, pokemon_moves.pokemon_move_method_id, pokemon_moves.version_group_id
-                       FROM pokemon_move_method_prose
-                       JOIN pokemon_moves ON pokemon_moves.pokemon_move_method_id = pokemon_move_method_prose.pokemon_move_method_id
-                            AND pokemon_moves.move_id = ? AND pokemon_moves.pokemon_id IN (SELECT id FROM pokemon WHERE species_id = ?)
-                       WHERE pokemon_move_method_prose.local_language_id = 9
-                       ORDER BY pokemon_moves.version_group_id DESC""", [moveid, pokemonid])
+            execSql("""SELECT name, ? AS pokemonname,
+                              GROUP_CONCAT(versions_level_method_string ORDER BY version_group_id SEPARATOR ", ") AS method_string
+                       FROM (SELECT name, MIN(version_group_id) AS version_group_id,
+                                    CONCAT(CASE
+                                               WHEN level
+                                                   THEN CONCAT("at level ", level, " ")
+                                                   ELSE ""
+                                           END, CONCAT("in ", GROUP_CONCAT(method_string SEPARATOR ", "))) AS versions_level_method_string
+                              FROM (SELECT pokemon_move_method_prose.name, pokemon_moves.level, pokemon_moves.version_group_id,
+                                           GROUP_CONCAT(DISTINCT version_names.name ORDER BY version_names.version_id SEPARATOR '/') AS method_string
+                                    FROM pokemon_move_method_prose
+                                    JOIN pokemon_moves ON pokemon_moves.pokemon_move_method_id = pokemon_move_method_prose.pokemon_move_method_id
+                                         AND pokemon_moves.move_id = ? AND pokemon_moves.pokemon_id IN (SELECT id FROM pokemon WHERE species_id = ?)
+                                    JOIN versions ON versions.version_group_id = pokemon_moves.version_group_id
+                                    JOIN version_names ON versions.id = version_names.version_id AND version_names.local_language_id = 9
+                                    WHERE pokemon_move_method_prose.local_language_id = 9
+                                    GROUP BY pokemon_moves.pokemon_move_method_id, pokemon_moves.version_group_id) AS methods
+                              GROUP BY `name`, `level`) AS version_level_group_methods
+                       GROUP BY `name`""", [pokemonname, moveid, pokemonid])
             .then (rows) ->
-                [levelUp, other] = _.partition(rows, (e) -> e.pokemon_move_method_id == 1)
-                res = {}
-                if levelUp.length
-                    res[1] = pokemon: pokemonname, name: levelUp[0].name, levels: _.map(_.takeWhile(levelUp, (e) -> e.version_group_id == levelUp[0].version_group_id), "level")
-                for e in other
-                    res[e.pokemon_move_method_id] = pokemon: pokemonname, name: e.name
-                res
+                _.indexBy(rows, 'name')
 
         getAbilityInfo = (name) ->
             execSql("""SELECT ability_names.name, ability_prose.effect FROM ability_prose
@@ -189,13 +196,9 @@ module.exports =
                             .then (methods) ->
                                 unless _.isEmpty(methods)
                                     methodString = _.map methods, (e) ->
-                                        (if e.name == "Level up"
-                                            "Level up at level #{e.levels.join("/")}"
-                                        else
-                                            e.name
-                                        ) + (if e.pokemon != pokemonid[0].name then " as #{e.pokemon}" else "")
-                                    .join(", ")
-                                    "#{pokemonid[0].name} can learn #{moveid[0].name} via #{methodString}."
+                                        "#{e.name} #{e.method_string}#{(if e.pokemonname != pokemonid[0].name then " as #{e.pokemonname}" else "")}"
+                                    .join("; via ")
+                                    "#{pokemonid[0].name} can learn #{moveid[0].name} via #{methodString}.".match(/.{1,450}(?: |$)/g)
                                 else
                                     "#{pokemonid[0].name} cannot learn #{moveid[0].name}."
                 )
