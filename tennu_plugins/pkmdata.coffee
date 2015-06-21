@@ -101,7 +101,7 @@ module.exports =
         getNatureModifiers = (name) ->
             execSql("""SELECT natures.increased_stat_id, natures.decreased_stat_id
                        FROM natures
-                       JOIN nature_names ON natures.id = nature_names.nature_id AND nature_names.name = ?""", [name])
+                       JOIN nature_names ON natures.id = nature_names.nature_id AND ? LIKE CONCAT('%', nature_names.name, '%')""", [name])
 
         getEggdata = (name) ->
             execSql("""SELECT pokemon.species_id, pokemon_species_names.name, pokemon_species.gender_rate, pokemon_species.hatch_counter
@@ -229,48 +229,44 @@ module.exports =
 
             "!stats": (command) ->
                 joined = command.args.join(" ")
-                getPokemonBaseStats(joined)
-                .then((rows) ->
-                    e = rows[0]
-                    if e?
-                        types = getPokemonTypes(e.species_id)
-                        if joined.toLowerCase() == e.name.toLowerCase()
-                            Promise.join(types,
-                                         getPokemonAbilities(e.species_id),
-                                         (types, abilities) ->
-                                             "#{e.name}: (#{_.map(types, (t) -> t.name).join("/")}) #{e.hp}/#{e.atk}/#{e.def}/#{e.spatk}/#{e.spdef}/#{e.spd} #{_.map(abilities, (a) -> "[#{if a.is_hidden then "HA" else a.slot-1}] #{a.name}").join(" ")} | BST: #{e.hp+e.atk+e.def+e.spatk+e.spdef+e.spd}"
-                            )
-                        else
-                            types.then((types) ->
-                                calcStats = (level, increased, decreased, evs) ->
-                                    calcStat = (base, ev, num) ->
-                                        ev = ev || 0
-                                        Math.floor((Math.floor((31 + 2*base + Math.floor(ev/4)) * level/100) + 5) * (1 + 0.1 * (increased == num) - 0.1 * (decreased == num)))
-                                    """#{e.name}: (#{_.map(types, (t) -> t.name).join("/")}) \
-                                       #{Math.floor((31 + 2*e.hp + Math.floor((evs.hp || 0)/4)) * level/100) + 10 + level}/\
-                                       #{calcStat(e.atk, evs.atk, 2)}/\
-                                       #{calcStat(e.def, evs.def, 3)}/\
-                                       #{calcStat(e.spatk, evs.spatk, 4)}/\
-                                       #{calcStat(e.spdef, evs.spdef, 5)}/\
-                                       #{calcStat(e.spd, evs.spd, 6)}"""
-                                level = 100
-                                if m = command.message.match(/(?:lvl?|level)\s*(\d+)/i)
-                                    level = parseInt(m[1])
-                                natureparser = /(hardy|bold|modest|calm|timid|lonely|docile|mild|gentle|hasty|adamant|impish|bashful|careful|rash|jolly|naughty|lax|quirky|naive|brave|relaxed|quiet|sassy|serious)/i
-                                evparser = /(\d+)\s*(hp|atk|def|spatk|spdef|spd)/ig
-                                evs = {}
-                                while m = evparser.exec(command.message)
-                                    evs[m[2]] = parseInt(m[1])
-                                if m = command.message.match(natureparser)
-                                    getNatureModifiers(m[1])
-                                    .then((nature) ->
+                Promise.join(getPokemonBaseStats(joined),
+                    getNatureModifiers(joined), (pokemon, nature) ->
+                        e = pokemon[0]
+                        if e?
+                            if m = command.message.match(/(?:lvl?|level)\s*(\d+)/i)
+                                level = parseInt(m[1])
+                            evparser = /(\d+)\s*(hp|atk|def|spatk|spdef|spd)/ig
+                            evs = {}
+                            while m = evparser.exec(command.message)
+                                evs[m[2]] = parseInt(m[1])
+                            types = getPokemonTypes(e.species_id)
+                            console.log nature
+                            unless level? || !(_.isEmpty(evs)) || nature.length
+                                Promise.join(types,
+                                             getPokemonAbilities(e.species_id),
+                                             (types, abilities) ->
+                                                 "#{e.name}: (#{_.map(types, (t) -> t.name).join("/")}) #{e.hp}/#{e.atk}/#{e.def}/#{e.spatk}/#{e.spdef}/#{e.spd} #{_.map(abilities, (a) -> "[#{if a.is_hidden then "HA" else a.slot-1}] #{a.name}").join(" ")} | BST: #{e.hp+e.atk+e.def+e.spatk+e.spdef+e.spd}"
+                                )
+                            else
+                                types.then (types) ->
+                                    calcStats = (level, increased, decreased, evs) ->
+                                        calcStat = (base, ev, num) ->
+                                            ev = ev || 0
+                                            Math.floor((Math.floor((31 + 2*base + Math.floor(ev/4)) * level/100) + 5) * (1 + 0.1 * (increased == num) - 0.1 * (decreased == num)))
+                                        """#{e.name}: (#{_.map(types, (t) -> t.name).join("/")}) \
+                                           #{Math.floor((31 + 2*e.hp + Math.floor((evs.hp || 0)/4)) * level/100) + 10 + level}/\
+                                           #{calcStat(e.atk, evs.atk, 2)}/\
+                                           #{calcStat(e.def, evs.def, 3)}/\
+                                           #{calcStat(e.spatk, evs.spatk, 4)}/\
+                                           #{calcStat(e.spdef, evs.spdef, 5)}/\
+                                           #{calcStat(e.spd, evs.spd, 6)}"""
+                                    level = 100 unless level?
+                                    if nature.length
                                         calcStats(level, nature[0].increased_stat_id, nature[0].decreased_stat_id, evs)
-                                    )
-                                else
-                                    calcStats(level, 2, 2, evs)
-                            )
-                    else
-                        "'#{joined}' does not begin with a valid Pokémon."
+                                    else
+                                        calcStats(level, 2, 2, evs)
+                        else
+                            "'#{joined}' does not begin with a valid Pokémon."
                 )
 
             "!eggdata": (command) ->
