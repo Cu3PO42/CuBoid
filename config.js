@@ -1,5 +1,5 @@
-module.exports =
-    "server": "irc.synirc.net",
+module.exports = {
+    "server": "localhost",
     "port": 6667,
     "nicknames": ["CuBoid"],
     "username": "CuBoid",
@@ -7,12 +7,14 @@ module.exports =
     "nickserv": "nickserv",
     "plugins": ["enable", "admin", "bits", "npr", "fhf", "calc", "tell", "control", "typegame", "pkmdata"],
     "command-trigger": "$",
-    "disable-help": false
-    "admins": [
-        nickname: "^Cu3PO42$"
-        identifiedAs: "Cu3PO42"
-    ]
-    "enabled":
-        "typegame":
+    "disable-help": false,
+    "admins": [{
+        nickname: "^Cu3PO42$",
+        identifiedAs: "Cu3PO42",
+    }],
+    "enabled": {
+        "typegame": {
             "#typegame": true
-
+        }
+    }
+};
