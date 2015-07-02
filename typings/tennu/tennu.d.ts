@@ -1,6 +1,6 @@
 declare module Tennu {
     interface Client {
-
+        config(key: string): any;
     }
 
     interface Message {
@@ -15,10 +15,10 @@ declare module Tennu {
         };
         nickname: string;
         channel: string;
+        isQuery: boolean; // I'd rather not rely on type checks at runtime :/
     }
 
     interface MessagePrivmsgNotice extends Message {
-        isQuery: boolean;
         channel: string;
         message: string;
     }
@@ -48,11 +48,11 @@ declare module Tennu {
         args: Array<string>;
     }
 
-    interface PluginImports {
+    type PluginImports = any;
 
-    } // TODO Document imports.
+    type PluginExport = any;
 
-    interface PluginExport {
-
-    } // TODO Document exports.
+    type Reply = string|string[];
+    type CommandHandler<T> = <T extends Message>(c: T) => Reply
+    type CommandHandlerProxy<T> = <T>(h: CommandHandler<T>) => CommandHandler<T>;
 }
