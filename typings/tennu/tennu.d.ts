@@ -18,14 +18,20 @@ declare module Tennu {
         isQuery: boolean; // I'd rather not rely on type checks at runtime :/
     }
 
-    interface MessagePrivmsgNotice extends Message {
+    interface MessagePrivmsg extends Message {
         channel: string;
         message: string;
     }
 
-    interface MessagePartQuit extends Message {
+    type MessageNotice = MessagePrivmsg;
+
+    interface MessagePart extends Message {
         reason: string;
     }
+
+    type MessageQuit = MessagePart;
+
+    type MessageJoin = Message;
 
     interface MessageKick extends Message {
         kicked: string;

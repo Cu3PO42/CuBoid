@@ -62,4 +62,4 @@ module CuBoid.Enable {
     }
 }
 
-exports = CuBoid.Enable;
+export = CuBoid.Enable;
