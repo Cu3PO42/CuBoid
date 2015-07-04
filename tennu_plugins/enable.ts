@@ -31,13 +31,11 @@ module CuBoid.Enable {
                 getEnabler: (name: string) => {
                     storage[name] = storage[name] || {};
 
-                    return {
-                        enabled: <T extends Tennu.Message>(fn: Tennu.CommandHandler<T>) => {
-                            return (command: T) => {
-                                var stored = storage[name][command.channel.toLowerCase()];
-                                if (command.isQuery !== undefined || stored || stored === undefined && storage[name].default) {
-                                    return fn(command)
-                                }
+                    return <T extends Tennu.Message>(fn: Tennu.CommandHandler<T>) => {
+                        return (command: T) => {
+                            var stored = storage[name][command.channel.toLowerCase()];
+                            if (command.isQuery !== undefined || stored || stored === undefined && storage[name].default) {
+                                return fn(command)
                             }
                         }
                     }

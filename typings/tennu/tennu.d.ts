@@ -60,5 +60,5 @@ declare module Tennu {
 
     type Reply = string|string[];
     type CommandHandler<T> = <T extends Message>(c: T) => Reply
-    type CommandHandlerProxy<T> = <T>(h: CommandHandler<T>) => CommandHandler<T>;
+    type CommandHandlerProxy = <T>(h: CommandHandler<T>) => CommandHandler<T>;
 }
