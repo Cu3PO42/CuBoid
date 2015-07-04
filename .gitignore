@@ -3,3 +3,4 @@ local.coffee
 node_modules/
 npm-debug.log
 tennu_plugins/**/*.js
+*.js
