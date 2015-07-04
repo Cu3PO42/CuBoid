@@ -10,6 +10,13 @@ import _ = require("lodash");
 import util = require("util");
 
 module CuBoid.Tell {
+    interface StoredMessage {
+        from_user: string;
+        to_user: string;
+        time: Date;
+        message: string;
+    }
+
     export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
         var pool = mysql.createPool(client.config("tell-database")),
             messageExtractor = /.tell\s*\S+\s*(.*)$/;
@@ -22,7 +29,7 @@ module CuBoid.Tell {
 
         function isRegistered(name: string): Promise<boolean> {
             var deferred = Promise.defer<boolean>();
-            registeredResolvers[name] = deferred;
+            registeredResolvers[name.toLowerCase()] = deferred;
             return deferred.promise;
         }
 
@@ -37,7 +44,12 @@ module CuBoid.Tell {
         return {
             handlers: {
                 "!tell": (command: Tennu.Command) => {
-                    client.whois(command.nickname)
+                    var resolver = confirmResolvers[command.nickname];
+                    if (resolver) {
+                        resolver.resolve(false);
+                        confirmResolvers[command.nickname] = undefined;
+                    }
+                    return client.whois(command.nickname)
                     .then((user) => {
                         if (!user.is_ok) {
                             return "There was a problem, please try again soon!";
@@ -68,9 +80,10 @@ module CuBoid.Tell {
                     if (notice.nickname === "NickServ") {
                         var m = notice.message.match(/^(\S+) is(.)/);
                         if (m) {
-                            var resolver = registeredResolvers[m[1]];
+                            var resolver = registeredResolvers[m[1].toLowerCase()];
                             if (resolver) {
                                 resolver.resolve(m[2] === " ");
+                                registeredResolvers[m[1].toLowerCase()] = undefined;
                             }
                         }
                     }
@@ -80,6 +93,7 @@ module CuBoid.Tell {
                     var resolver = confirmResolvers[command.nickname];
                     if (resolver) {
                         resolver.resolve(true);
+                        confirmResolvers[command.nickname] = undefined;
                     }
                 },
 
@@ -87,9 +101,44 @@ module CuBoid.Tell {
                     var resolver = confirmResolvers[command.nickname];
                     if (resolver) {
                         resolver.resolve(false);
+                        confirmResolvers[command.nickname] = undefined;
                     }
+                },
+
+                privmsg: (message: Tennu.MessagePrivmsg) => {
+                    pool.execSql("SELECT FROM messages WHERE to_user = ?", [message.nickname])
+                    .then((messages: StoredMessage[]) => {
+                        if (messages.length) {
+                            client.whois(message.nickname)
+                            .then((whois) => {
+                                if (whois.is_ok && whois.value.identified && whois.value.identifiedas.toLowerCase() === message.nickname.toLowerCase()) {
+                                    pool.execSql("DELETE FROM messages WHERE to_user = ?", [message.nickname]);
+                                    client.say(message.nickname, _.map(messages, (e) => { return util.format("%s: %s said %s to tell you: %s", message.nickname, e.from_user, moment(e.time).fromNow(), e.message); }))
+                                }
+                            })
+                        }
+                    })
                 }
-            }
+            },
+
+            help: {
+                "tell": [
+                    "tell <user> <message>",
+                    " ",
+                    "Forward a message to the user when they become active. Requires user to be registered.",
+                    "If the recipient isn't registered, the user will be asked to confirm."
+                ],
+
+                "confirmtell": [
+                    "Confirm that you want to send a message to an unregistered user."
+                ],
+
+                "aborttell": [
+                    "Abort a message pending approval to an unregistered user."
+                ]
+            },
+
+            commands: ["tell", "confirmtell", "abortell"]
         };
     }
 }
