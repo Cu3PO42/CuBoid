@@ -263,15 +263,15 @@ declare class Promise<R> implements Promise.Thenable<R>, Promise.Inspection<R> {
 	 * Like calling `.then`, but the fulfillment value or rejection reason is assumed to be an array, which is flattened to the formal parameters of the handlers.
 	 */
 	// TODO how to model instance.spread()? like Q?
-	spread<U>(onFulfill: Function, onReject?: (reason: any) => Promise.Thenable<U>): Promise<U>;
-	spread<U>(onFulfill: Function, onReject?: (reason: any) => U): Promise<U>;
-	/*
+	// spread<U>(onFulfill: Function, onReject?: (reason: any) => Promise.Thenable<U>): Promise<U>;
+	// spread<U>(onFulfill: Function, onReject?: (reason: any) => U): Promise<U>;
+
 	 // TODO or something like this?
-	 spread<U, W>(onFulfill: (...values: W[]) => Promise.Thenable<U>, onReject?: (reason: any) => Promise.Thenable<U>): Promise<U>;
-	 spread<U, W>(onFulfill: (...values: W[]) => Promise.Thenable<U>, onReject?: (reason: any) => U): Promise<U>;
-	 spread<U, W>(onFulfill: (...values: W[]) => U, onReject?: (reason: any) => Promise.Thenable<U>): Promise<U>;
-	 spread<U, W>(onFulfill: (...values: W[]) => U, onReject?: (reason: any) => U): Promise<U>;
-	 */
+	 spread<U>(onFulfill: (...values: any[]) => Promise.Thenable<U>, onReject?: (reason: any) => Promise.Thenable<U>): Promise<U>;
+	 spread<U>(onFulfill: (...values: any[]) => Promise.Thenable<U>, onReject?: (reason: any) => U): Promise<U>;
+	 spread<U>(onFulfill: (...values: any[]) => U, onReject?: (reason: any) => Promise.Thenable<U>): Promise<U>;
+	 spread<U>(onFulfill: (...values: any[]) => U, onReject?: (reason: any) => U): Promise<U>;
+
 	/**
 	 * Same as calling `Promise.all(thisPromise)`. With the exception that if this promise is bound to a value, the returned promise is bound to that value too.
 	 */
