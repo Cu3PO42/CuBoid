@@ -308,6 +308,9 @@ declare module moment {
         get(unit: string): number;
         set(unit: string, value: number): Moment;
 
+        to(date: string|number|Moment|any[]): string;
+        to(date: string|number|Moment|any[], boolean): string;
+
     }
 
     interface MomentCalendar {

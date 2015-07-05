@@ -17,6 +17,9 @@ module CuBoid.Tell {
         message: string;
     }
 
+    // TODO Cache database
+    // TODO Add delayed tell
+
     export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
         var pool = mysql.createPool(client.config("tell-database")),
             messageExtractor = /.tell\s*\S+\s*(.*)$/;
