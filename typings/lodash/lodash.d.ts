@@ -3876,6 +3876,24 @@ declare module _ {
             whereValue: W): LoDashWrapper<T>;
     }
 
+    //_.partition
+    interface LoDashStatic {
+        partition<T>(
+            collection: Array<T>,
+            predicate: string|Function|{},
+            thisArg?: any): Array<Array<T>>;
+
+        partition<T>(
+            collection: List<T>,
+            predicate: string|Function|{},
+            thisArg?: any): Array<Array<T>>;
+
+        partition<T>(
+            collection: Dictionary<T>,
+            predicate: string|Function|{},
+            thisArg?: any): Array<Array<T>>;
+   }
+
     //_.sum
     interface LoDashStatic {
         /**
