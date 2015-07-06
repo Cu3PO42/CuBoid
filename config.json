@@ -1,7 +1,7 @@
 {
     "server": "irc.synirc.net",
     "port": 6667,
-    "nicknames": ["CuBoid2"],
+    "nicknames": ["CuBoid"],
     "username": "CuBoid",
     "realname": "Cu's Bot",
     "nickserv": "nickserv",
