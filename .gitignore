@@ -1,5 +1,5 @@
 .idea/
-local.coffee
+local.json
 node_modules/
 npm-debug.log
 tennu_plugins/**/*.js
