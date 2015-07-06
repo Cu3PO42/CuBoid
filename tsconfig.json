@@ -1,1 +1,24 @@
-{}
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "removeComments": true,
+        "preserveConstEnums": true,
+        "sourceMap": true
+    },
+    "filesGlob": [
+        "**/*.ts",
+        "!**/*.d.ts"
+    ],
+    "files": [
+        "mysql-bootstrap.ts",
+        "pokemonTypes.ts",
+        "tennu_plugins/bits.ts",
+        "tennu_plugins/calc.ts",
+        "tennu_plugins/enable.ts",
+        "tennu_plugins/fhf.ts",
+        "tennu_plugins/npr.ts",
+        "tennu_plugins/pkmdata.ts",
+        "tennu_plugins/tell.ts",
+        "tennu_plugins/typegame.ts"
+    ]
+}

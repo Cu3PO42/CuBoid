@@ -1,4 +1,5 @@
 /// <reference path="../typings/tennu/tennu.d.ts"/>
+/// <reference path="../typings/mathjs/mathjs.d.ts"/>
 import mathjs = require("mathjs");
 
 module CuBoid.Calc {
