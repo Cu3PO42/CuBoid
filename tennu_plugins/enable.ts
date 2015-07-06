@@ -35,7 +35,7 @@ module CuBoid.Enable {
                     return <T extends Tennu.Message>(fn: Tennu.CommandHandler<T>) => {
                         return (command: T) => {
                             var stored = storage[name][command.channel.toLowerCase()];
-                            if (command.isQuery !== undefined || stored || stored === undefined && storage[name].default) {
+                            if (command.isQuery || stored || stored === undefined && storage[name].default) {
                                 return fn(command)
                             }
                         }
