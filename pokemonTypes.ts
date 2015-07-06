@@ -749,7 +749,7 @@ module CuBoid.Typegame.Data {
         type_list[types[type]] = type;
     }
 
-    export var type_count: {[type: number]: number};
+    export var type_count: {[type: number]: number} = {};
     for (let i = 0; i < 18; ++i) {
         for (let j = 0; j < 18; ++j) {
             type_count[1<<i|1<<j] = 0;

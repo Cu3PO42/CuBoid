@@ -221,9 +221,11 @@ module CuBoid.Typegame {
                 ]
             },
 
-            commands: ["typegame", "scramble", "guess", "unscramble", "solvescramble"],
-
-            requires: ["enable"]
+            commands: ["typegame", "scramble", "guess", "unscramble", "solvescramble"]
         }
     }
+
+    export var requires = ["enable"];
 }
+
+export = CuBoid.Typegame;

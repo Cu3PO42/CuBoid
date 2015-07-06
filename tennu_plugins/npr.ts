@@ -23,11 +23,11 @@ module CuBoid.Npr {
                         return res;
                     }
                 })
-            },
-
-            requires: ["enable"]
+            }
         }
     }
+
+    export var requires = ["enable"];
 }
 
 export = CuBoid.Npr;

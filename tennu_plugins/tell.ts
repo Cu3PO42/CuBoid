@@ -28,11 +28,13 @@ module CuBoid.Tell {
             pool.end(_.noop);
         });
 
-        var registeredResolvers: { [nick: string]: Promise.Resolver<boolean> } = {};
+        var registeredResolvers: { [nick: string]: Promise.Resolver<boolean> } = {},
+            nickserv: string = client.config("nickserv").toLowerCase();
 
         function isRegistered(name: string): Promise<boolean> {
             var deferred = Promise.defer<boolean>();
             registeredResolvers[name.toLowerCase()] = deferred;
+            client.say(nickserv, "info " + name);
             return deferred.promise;
         }
 
@@ -58,18 +60,19 @@ module CuBoid.Tell {
                             return "There was a problem, please try again soon!";
                         }
                         if (user.value.identified) {
-                            var recipient = command.message.match(messageExtractor)[1];
-                            return isRegistered(recipient)
+                            var message = command.message.match(messageExtractor)[1];
+                            return isRegistered(command.args[0])
                             .then((registered) => {
+                                console.log(registered);
                                 if (registered) {
                                     return true;
                                 }
-                                client.say(command.channel, [util.format("The user '%s' is not registered. Are you sure you want to send this message, %s?", recipient, command.nickname), "Please use $confirmtell to confirm or $aborttell to abort."]);
+                                client.say(command.channel, [util.format("The user '%s' is not registered. Are you sure you want to send this message, %s?", command.args[0], command.nickname), "Please use $confirmtell to confirm or $aborttell to abort."]);
                                 return confirmTell(command.nickname);
                             })
                             .then((dotell) => {
                                 if (dotell) {
-                                    pool.execSql("INSERT INTO messages (from_user, to_user, message) VALUES (?, ?, ?)", [user.value.identifiedas, command.args[0], recipient]);
+                                    pool.execSql("INSERT INTO messages (from_user, to_user, message) VALUES (?, ?, ?)", [user.value.identifiedas, command.args[0], message]);
                                     return "I'll pass that on."
                                 }
                                 return "Aborted.";
@@ -80,8 +83,8 @@ module CuBoid.Tell {
                 },
 
                 notice: (notice: Tennu.MessageNotice) => {
-                    if (notice.nickname === "NickServ") {
-                        var m = notice.message.match(/^(\S+) is(.)/);
+                    if (notice.nickname && notice.nickname.toLowerCase() === nickserv) {
+                        var m = notice.message.match(/^(?:Nick )?\x02?(\S+?)\x02? is(.)/);
                         if (m) {
                             var resolver = registeredResolvers[m[1].toLowerCase()];
                             if (resolver) {
@@ -109,7 +112,7 @@ module CuBoid.Tell {
                 },
 
                 privmsg: (message: Tennu.MessagePrivmsg) => {
-                    pool.execSql("SELECT FROM messages WHERE to_user = ?", [message.nickname])
+                    pool.execSql("SELECT * FROM messages WHERE to_user = ?", [message.nickname])
                     .then((messages: StoredMessage[]) => {
                         if (messages.length) {
                             client.whois(message.nickname)
@@ -145,3 +148,5 @@ module CuBoid.Tell {
         };
     }
 }
+
+export = CuBoid.Tell;

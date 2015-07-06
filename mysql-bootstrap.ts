@@ -9,8 +9,9 @@ var Pool = require("mysql/lib/Pool").prototype;
 Promise.promisifyAll(Pool);
 Promise.promisifyAll(require("mysql/lib/Connection").prototype);
 
-Pool.execSql = (sql: string, replacement: any[]) => {
-    this.getConnectionAsync()
+// FIXME grammar broken
+Pool.execSql = function(sql: string, replacement: any[]) {
+    return this.getConnectionAsync()
     .then((connection) => {
         return connection.queryAsync(sql, replacement)
         .then((results) => {

@@ -4,7 +4,7 @@ import util = require("util");
 
 module CuBoid.Enable {
     export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
-        var requiresAdmin: Tennu.CommandHandlerProxy<Tennu.Command> = imports.admin.requiresAdmin,
+        var requiresAdmin: Tennu.CommandHandlerProxy = imports.admin.requiresAdmin,
             storage = client.config("enabled") || {};
         return {
             handlers: {
@@ -31,6 +31,7 @@ module CuBoid.Enable {
                 getEnabler: (name: string) => {
                     storage[name] = storage[name] || {};
 
+                    // TODO grammar bug, ugh
                     return <T extends Tennu.Message>(fn: Tennu.CommandHandler<T>) => {
                         return (command: T) => {
                             var stored = storage[name][command.channel.toLowerCase()];
@@ -58,6 +59,8 @@ module CuBoid.Enable {
             }
         }
     }
+
+    export var requiresRoles = ["admin"];
 }
 
 export = CuBoid.Enable;

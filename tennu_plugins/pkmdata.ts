@@ -212,7 +212,7 @@ module CuBoid.Pkmdata {
                                             e.method_string,
                                             e.pokemonname !== pokemonid[0].name ? " as " + e.pokemonname : "");
                                     }).join("; via ");
-                                    return util.format("%s can learn %s via %s.", pokemonid[0].name, moveid[0].name, methodString).match(/.{1, 400}(?: |$)/g);
+                                    return util.format("%s can learn %s via %s.", pokemonid[0].name, moveid[0].name, methodString).match(/.{1,400}(?: |$)/g);
                                 } else {
                                     return util.format("%s cannot learn %s.", pokemonid[0].name, moveid[0].name);
                                 }
@@ -282,7 +282,7 @@ module CuBoid.Pkmdata {
                             }
 
                             if (level === undefined && _.isEmpty(evs) && !nature.length) {
-                                Promise.join(types, getPokemonAbilities(e.species_id))
+                                return Promise.join(types, getPokemonAbilities(e.species_id))
                                 .spread((types: PokemonTypes, abilities: PokemonAbilities) => {
                                     return util.format("%s: (%s) %d/%d/%d/%d/%d/%d %s | BST: %d",
                                         e.name,
@@ -293,12 +293,12 @@ module CuBoid.Pkmdata {
                                         e.spatk,
                                         e.spdef,
                                         e.spd,
-                                        _.map(abilities, (a) => { return util.format("[%s] %s", a.is_hidden ? "HA" : (a.slot - 1).toString())}).join(" "),
+                                        _.map(abilities, (a) => { return util.format("[%s] %s", a.is_hidden ? "HA" : (a.slot - 1).toString(), a.name)}).join(" "),
                                         e.hp + e.atk + e.def + e.spatk + e.spdef + e.spd
                                     );
                                 })
                             } else {
-                                types
+                                return types
                                 .then((types) => {
                                     var increased_stat = 2, decreased_stat = 2;
                                     if (level === undefined)
@@ -337,7 +337,7 @@ module CuBoid.Pkmdata {
                                 var partitionedAbilities = _.partition(abilities, "is_hidden");
                                 return util.format("%s: [Gender] %s | [Hatch Cycles] %s | [Egg Groups] %s | [Abilities] %s %s",
                                     e.name,
-                                    e.gender_rate != 1 ? util.format("%d%% M, %d%% F", 100-e.gender_rate*12.5, e.gender_rate*12.5) : "Genderless",
+                                    e.gender_rate !== -1 ? util.format("%d%% M, %d%% F", 100-e.gender_rate*12.5, e.gender_rate*12.5) : "Genderless",
                                     e.hatch_counter * 256,
                                     _.map(eggGroups, "name").join("/"),
                                     _.map(partitionedAbilities[1], "name").join("/"),
@@ -350,13 +350,13 @@ module CuBoid.Pkmdata {
                     });
                 },
 
-                "!type": (command: Tennu.Command) => {
+                "!type": (command: Tennu.Command): Tennu.Reply => {
                     switch (command.args.length) {
                         case 0:
                             return "Please specify at least one type.";
                         case 1:
                         case 2:
-                            getTypesEfficiency(command.args)
+                            return getTypesEfficiency(command.args)
                             .then((rows) => {
                                 if (rows.length) {
                                     return rows;
