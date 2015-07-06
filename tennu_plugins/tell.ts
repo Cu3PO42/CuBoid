@@ -31,7 +31,7 @@ module CuBoid.Tell {
         var registeredResolvers: { [nick: string]: Promise.Resolver<boolean> } = {},
             nickserv: string = client.config("nickserv").toLowerCase();
 
-        function isRegistered(name: string): Promise<boolean> {
+        function isRegistered(name: string) {
             var deferred = Promise.defer<boolean>();
             registeredResolvers[name.toLowerCase()] = deferred;
             client.say(nickserv, "info " + name);
@@ -40,9 +40,18 @@ module CuBoid.Tell {
 
         var confirmResolvers: { [nick: string]: Promise.Resolver<boolean> } = {};
 
-        function confirmTell(name: string): Promise<boolean> {
+        function confirmTell(name: string) {
             var deferred = Promise.defer<boolean>();
             confirmResolvers[name] = deferred;
+            return deferred.promise;
+        }
+
+        var receiveResolvers: { [nick: string]: Promise.Resolver<boolean> } = {};
+
+        function confirmReceive(name: string) {
+            var deferred = Promise.defer<boolean>();
+            receiveResolvers[name.toLowerCase()] = deferred;
+            client.say(nickserv, "status " + name);
             return deferred.promise;
         }
 
@@ -92,6 +101,14 @@ module CuBoid.Tell {
                                 registeredResolvers[m[1].toLowerCase()] = undefined;
                             }
                         }
+                        m = notice.message.match(/^STATUS (\S+) (\d)/);
+                        if (m) {
+                            var resolver = receiveResolvers[m[1].toLowerCase()];
+                            if (resolver) {
+                                resolver.resolve(m[2] !== "1");
+                                receiveResolvers[m[1].toLowerCase()] = undefined;
+                            }
+                        }
                     }
                 },
 
@@ -115,9 +132,9 @@ module CuBoid.Tell {
                     pool.execSql("SELECT * FROM messages WHERE to_user = ?", [message.nickname])
                     .then((messages: StoredMessage[]) => {
                         if (messages.length) {
-                            client.whois(message.nickname)
-                            .then((whois) => {
-                                if (whois.is_ok && whois.value.identified && whois.value.identifiedas.toLowerCase() === message.nickname.toLowerCase()) {
+                            confirmReceive(message.nickname)
+                            .then((ok) => {
+                                if (ok) {
                                     pool.execSql("DELETE FROM messages WHERE to_user = ?", [message.nickname]);
                                     client.say(message.nickname, _.map(messages, (e) => { return util.format("%s: %s said %s to tell you: %s", message.nickname, e.from_user, moment(e.time).fromNow(), e.message); }))
                                 }
