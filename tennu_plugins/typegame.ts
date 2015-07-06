@@ -37,7 +37,7 @@ module CuBoid.Typegame {
             runningCache: string[] = [];
 
         function guessType(channel: string, nick: string, guess: string) {
-            var cache = typegameCache[channel],
+            var cache = typegameCache[channel] = typegameCache[channel] || { running: false },
                 guess = guess.toLowerCase();
 
             if (cache.running) {
@@ -53,7 +53,7 @@ module CuBoid.Typegame {
                                 _.remove(runningCache[channel], (e) => { return e === "typegame"; });
                                 return util.format("Correct! %s wins this round!", nick);
                             } else if (_.size(cache.guessed) === cache.max) {
-                                var maxUsers = [{name: name, count: 0}];
+                                var maxUsers = [{name: "", count: 0}];
                                 for (let name in cache.userCount) {
                                     let count = cache.userCount[name];
                                     if (count > maxUsers[0].count) {
@@ -64,7 +64,7 @@ module CuBoid.Typegame {
                                 }
                                 cache.running = false;
                                 _.remove(runningCache[channel], (e) => { return e === "typegame"; });
-                                return util.format("Correct! All possible guesses made. %s win%s with guesses.",
+                                return util.format("Correct! All possible guesses made. %s win%s with %d guesses.",
                                                    _.map(maxUsers, "name").join(", "),
                                                    maxUsers.length === 1 ? "s": "",
                                                    maxUsers[0].count
@@ -83,7 +83,7 @@ module CuBoid.Typegame {
         }
 
         function guessScramble(channel: string, nick:string, guess:string) {
-            var cache = scrambleCache[channel];
+            var cache = scrambleCache[channel] = scrambleCache[channel] || { running: false };
 
             if (cache.running) {
                 if (guess.toLowerCase() === cache.name.toLowerCase()) {
@@ -101,12 +101,14 @@ module CuBoid.Typegame {
         return {
             handlers: {
                 "!typegame": enabler((command: Tennu.Command) => {
+                    var cache = typegameCache[command.channel] = typegameCache[command.channel] || { running: false };
                     if (typegameCache[command.channel].running) {
                         return util.format("A game is still running! Name %s Pokémon with the type %s!", cache.cnt, cache.types.join("/"));
                     } else {
-                        runningCache[command.channel].push("typegame")
+                        (runningCache[command.channel] = runningCache[command.channel] || []).push("typegame")
                         var {type, cnt} = _.sample(Data.type_count_array);
-                        var cache = typegameCache[command.channel] = {
+                        console.log(cnt);
+                        cache = typegameCache[command.channel] = {
                             running: true,
                             type: type,
                             cnt: _.random(1, _.min([5, cnt])),
@@ -126,11 +128,11 @@ module CuBoid.Typegame {
                 }),
 
                 "!scramble": enabler((command: Tennu.Command) => {
-                    var cache = scrambleCache[command.channel];
+                    var cache = scrambleCache[command.channel] = scrambleCache[command.channel] || { running: false };
                     if (cache.running) {
                         return "A game is still running. Unsramble this name: " + cache.scrambled;
                     } else {
-                        runningCache[command.channel].push("scramble");
+                        (runningCache[command.channel] = runningCache[command.channel] || []).push("scramble")
                         var name = _.sample(Data.pokemon_array).name;
                         cache = scrambleCache[command.channel] = {
                             running: true,
@@ -156,7 +158,7 @@ module CuBoid.Typegame {
                 }),
 
                 "!solvescramble": enabler((command: Tennu.Command) => {
-                    var cache = scrambleCache[command.channel];
+                    var cache = scrambleCache[command.channel] = scrambleCache[command.channel] || { running: false };
                     if (cache.running) {
                         var now = moment();
                         if (now.isAfter(cache.end)) {
@@ -180,13 +182,7 @@ module CuBoid.Typegame {
                                 return guessScramble(message.channel, message.nickname, trimmed);
                         }
                     }
-                }),
-
-                join: (message: Tennu.MessageJoin) => {
-                    typegameCache[message.channel] = {running: false};
-                    scrambleCache[message.channel] = {running: false};
-                    runningCache[message.channel] = [];
-                }
+                })
             },
 
             help: {

@@ -744,7 +744,7 @@ module CuBoid.Typegame.Data {
         Fairy: 17
     }
 
-    export var type_list: {type: number}[] = [];
+    export var type_list: string[] = [];
     for (let type in types) {
         type_list[types[type]] = type;
     }
@@ -770,7 +770,9 @@ module CuBoid.Typegame.Data {
     export var type_count_array: {type: number, cnt: number}[] = [];
     for (let type in type_count) {
         let count = type_count[type];
-        type_count_array.push({ type: parseInt(type), cnt: type_count[type] });
+        if (count) {
+            type_count_array.push({ type: parseInt(type), cnt: count });
+        }
     }
 }
 

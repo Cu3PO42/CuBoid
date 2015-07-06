@@ -10,7 +10,7 @@ module CuBoid.Fhf {
             handlers: {
                 privmsg: (message: Tennu.MessagePrivmsg) => {
                     if (message.message === "s('3')/") {
-                        var chnmp = channelMap[message.channel];
+                        var chnmp = channelMap[message.channel] = channelMap[message.channel] || { left: [], right: [] };
                         if (chnmp.right.length) {
                             return [message.nickname + " s('3')/\\('3')z " + chnmp.right.pop(), "~FABULOUS~"];
                         } else {
@@ -18,7 +18,7 @@ module CuBoid.Fhf {
                             setTimeout(Array.prototype.shift.bind(chnmp.left), 60000);
                         }
                     } else if (message.message === "\\('3')z") {
-                        var chnmp = channelMap[message.channel];
+                        var chnmp = channelMap[message.channel] = channelMap[message.channel] || { left: [], right: [] };
                         if (chnmp.left.length) {
                             return [chnmp.left.pop() + " s('3')/\\('3')z " + message.nickname, "~FABULOUS~"];
                         } else {
@@ -26,10 +26,6 @@ module CuBoid.Fhf {
                             setTimeout(Array.prototype.shift.bind(chnmp.right), 60000);
                         }
                     }
-                },
-
-                join: (message: Tennu.MessageJoin) => {
-                    channelMap[message.channel] = { left: [], right: [] }
                 }
             }
         }
