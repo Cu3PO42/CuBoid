@@ -36,7 +36,7 @@ module CuBoid.Enable {
                         return (command: T) => {
                             var stored = storage[name][command.channel.toLowerCase()];
                             if (command.isQuery || stored || stored === undefined && storage[name].default) {
-                                return fn(command)
+                                return fn(command);
                             }
                         }
                     }

@@ -147,6 +147,10 @@ module CuBoid.Pkmdata {
             return pool.execSql(sqlQueries["typeEfficiency"], types);
         }
 
+        function getTypeatkEfficiency(type: string): Promise<{type: string, damage_factor: number}[]> {
+            return pool.execSql(sqlQueries["typeatkEfficiency"], [type]);
+        }
+
         function getAllLearnMethods(moveid: number, speciesid: number, speciesname: string): Promise<LearnMethods> {
             return Promise.join(getLearnMethods(moveid, speciesid, speciesname),
                 getPreviousEvolution(speciesid)
@@ -380,6 +384,23 @@ module CuBoid.Pkmdata {
                             });
                         default:
                             return "Please specify no more than two types.";
+                    }
+                },
+
+                "!typeatk": (command: Tennu.Command): Tennu.Reply => {
+                    if (command.args.length == 1) {
+                        return getTypeatkEfficiency(command.args[0])
+                        .then((rows) => {
+                            var sorted = _.groupBy(rows, "damage_factor"),
+                                res: string[] = [];
+                            if (sorted[200] !== undefined) res.push("super effective damage against " + _.map(sorted[200], "name").join(", "));
+                            if (sorted[100] !== undefined) res.push("normal damage against " + _.map(sorted[100], "name").join(", "));
+                            if (sorted[50] !== undefined) res.push("not very effective damage against " + _.map(sorted[50], "name").join(", "));
+                            if (sorted[0] !== undefined) res.push("no damage against " + _.map(sorted[0], "name").join(", "));
+                            return util.format("%s deals %s.", _.capitalize(command.args[0].toLowerCase()), res.join("; "));
+                        })
+                    } else {
+                        return "Please specify exactly one type."
                     }
                 },
 
