@@ -1,5 +1,5 @@
-require('coffee-script/register');
 var _ = require('lodash');
+var fs = require('fs');
 
 function run(config) {
     var Client = require('tennu').Client;
@@ -57,8 +57,8 @@ function run(config) {
     process.on('SIGTERM', onabort);
 }
 
-var config = require('./config'),
-    local = require('./local');
+var config = JSON.parse(fs.readFileSync('./config.json', 'utf-8')),
+    local = JSON.parse(fs.readFileSync('./local.json', 'utf-8'));
 
 _.extend(config, local);
 
