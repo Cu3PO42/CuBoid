@@ -69,6 +69,11 @@
         }
       }
     },
+    "ntypescript": {
+      "version": "1.201507021036.1",
+      "from": "ntypescript@*",
+      "resolved": "https://registry.npmjs.org/ntypescript/-/ntypescript-1.201507021036.1.tgz"
+    },
     "tennu": {
       "version": "4.2.4",
       "from": "https://registry.npmjs.org/tennu/-/tennu-4.2.4.tgz",
