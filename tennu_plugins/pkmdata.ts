@@ -100,7 +100,7 @@ module CuBoid.Pkmdata {
 
         interface PokemonBaseStats {
             name: string;
-            species_id: number;
+            id: number;
             hp: number;
             atk: number;
             def: number;
@@ -314,7 +314,7 @@ module CuBoid.Pkmdata {
                                 m = command.message.match(/(?:lvl|level)\s*(\d+)/i),
                                 level: number = undefined,
                                 evs: any = {},
-                                types = getPokemonTypes(e.species_id);
+                                types = getPokemonTypes(e.id);
 
                             if (m) {
                                 level = parseInt(m[1]);
@@ -325,7 +325,7 @@ module CuBoid.Pkmdata {
                             }
 
                             if (level === undefined && _.isEmpty(evs) && !nature.length) {
-                                return Promise.join(types, getPokemonAbilities(e.species_id))
+                                return Promise.join(types, getPokemonAbilities(e.id))
                                 .spread((types: PokemonTypes, abilities: PokemonAbilities) => {
                                     return util.format("%s: (%s) %d/%d/%d/%d/%d/%d %s | BST: %d",
                                         e.name,

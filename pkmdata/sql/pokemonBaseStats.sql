@@ -1,4 +1,4 @@
-SELECT pokemon.species_id,
+SELECT pokemon.id,
 
     (SELECT base_stat
      FROM pokemon_stats
