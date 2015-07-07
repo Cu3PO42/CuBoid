@@ -76,7 +76,7 @@ module CuBoid.Tell {
                                 if (registered) {
                                     return true;
                                 }
-                                client.say(command.channel, [util.format("The user '%s' is not registered. Are you sure you want to send this message, %s?", command.args[0], command.nickname), "Please use $confirmtell to confirm or $aborttell to abort."]);
+                                client.say(command.nickname, [util.format("The user '%s' is not registered. Are you sure you want to send this message, %s?", command.args[0], command.nickname), "Please use $confirmtell to confirm or $aborttell to abort."]);
                                 return confirmTell(command.nickname);
                             })
                             .then((dotell) => {
