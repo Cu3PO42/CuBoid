@@ -110,7 +110,7 @@ module CuBoid.Pkmdata {
         }
 
         function getPokemonBaseStats(name: string): Promise<PokemonBaseStats[]> {
-            return pool.execSql(sqlQueries["pokemonBaseStats"], [name]);
+            return pool.execSql(sqlQueries["pokemonBaseStats"], [name, name]);
         }
 
         type PokemonAbilities = {name: string; is_hidden: number; slot: number; }[];
