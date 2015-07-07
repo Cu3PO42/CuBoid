@@ -158,6 +158,10 @@ module CuBoid.Pkmdata {
             return pool.execSql(sqlQueries["glId"], [name]);
         }
 
+        function getItemData(name: string): Promise<{ short_effect: string; name: string; }[]> {
+            return pool.execSql(sqlQueries["itemData"], [name]);
+        }
+
         function getAllLearnMethods(moveid: number, speciesid: number, speciesname: string): Promise<LearnMethods> {
             return Promise.join(getLearnMethods(moveid, speciesid, speciesname),
                 getPreviousEvolution(speciesid)
@@ -439,10 +443,10 @@ module CuBoid.Pkmdata {
                         return "Please specify a Pokémon.";
                     }
                     var joined = command.args.join(" ");
-                    return getGlId(joined)
-                    .then((rows): Tennu.Reply => {
+                    getGlId(joined)
+                    .then((rows) => {
                         if (rows.length === 0) {
-                            return util.format("'%s' is not a valid Pokémon.", joined);
+                            client.say(command.nickname, util.format("'%s' is not a valid Pokémon.", joined));
                         }
                         pokemonGl.GetGLData(rows[0].id)
                         .then((data) => {
@@ -464,7 +468,18 @@ module CuBoid.Pkmdata {
                             }
                         });
                     });
+                },
 
+                "!item": (command: Tennu.Command) => {
+                    var joined = command.args.join(" ");
+                    return getItemData(joined)
+                    .then((rows) => {
+                        if (rows.length === 0) {
+                            return util.format("'%s' is not a valid item.", joined);
+                        } else {
+                            return util.format("%s: %s", rows[0].name, rows[0].short_effect);
+                        }
+                    })
                 }
             },
 
@@ -526,10 +541,16 @@ module CuBoid.Pkmdata {
                     "usage <pokemon>",
                     " ",
                     "Fetch and return usage data for the given Pokémon from Pokémon GL."
+                ],
+
+                "item": [
+                    "item <item>",
+                    " ",
+                    "Return the effect/usage of the item."
                 ]
             },
 
-            commands: ["learn", "ability", "move", "stats", "eggdata", "type", "typeatk", "types", "usage"]
+            commands: ["learn", "ability", "move", "stats", "eggdata", "type", "typeatk", "types", "usage", "item"]
        }
     }
 }
