@@ -45,8 +45,8 @@ AND pokemon_species_names.local_language_id = 9
 WHERE pokemon.id =
         (SELECT DISTINCT pokemon_species_id AS id
          FROM pokemon_species_names
-         WHERE ? LIKE concat(name, '%')
+         WHERE concat(?, ' ') LIKE concat(name, ' %')
          UNION ALL SELECT DISTINCT pokemon_forms.pokemon_id AS id
          FROM pokemon_forms
          JOIN pokemon_form_names ON pokemon_form_names.pokemon_form_id = pokemon_forms.id
-         WHERE ? LIKE concat(pokemon_form_names.pokemon_name, '%') LIMIT 1)
+         WHERE concat(?, ' ') LIKE concat(pokemon_form_names.pokemon_name, ' %') LIMIT 1)

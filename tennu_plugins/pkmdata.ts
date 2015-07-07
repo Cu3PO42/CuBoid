@@ -505,7 +505,7 @@ module CuBoid.Pkmdata {
 
                 "!search": (command: Tennu.Command) => {
                     var m: RegExpExecArray, promises: Promise<{id: number}[]>[] = [],
-                        re = /(?:.search|,)\s*([\w\s.]+)\s*(?=,|$)/g;
+                        re = /(?:.search|,)\s*([\w\s.-]+)\s*(?=,|$)/g;
                     while (m = re.exec(command.message)) {
                         promises.push(getPokemonIdBySpec(m[1]));
                     }
