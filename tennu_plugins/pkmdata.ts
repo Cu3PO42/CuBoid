@@ -95,7 +95,7 @@ module CuBoid.Pkmdata {
         }
 
         function getPokemonTypesByName(name: string): Promise<PokemonTypes> {
-            return pool.execSql(sqlQueries["pokemonTypesByName"], [name]);
+            return pool.execSql(sqlQueries["pokemonTypesByName"], [name, name]);
         }
 
         interface PokemonBaseStats {
