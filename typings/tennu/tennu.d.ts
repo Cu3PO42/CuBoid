@@ -70,7 +70,7 @@ declare module Tennu {
 
     type PluginExport = any;
 
-    type Reply = string|string[]|Promise<string>|Promise<string[]>;
+    type Reply = string|string[]|Promise<string|string[]>;
     type CommandHandler<T> = <T extends Message>(c: T) => Reply
     type CommandHandlerProxy = <T>(h: CommandHandler<T>) => CommandHandler<T>;
 }

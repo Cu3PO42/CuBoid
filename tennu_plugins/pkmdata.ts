@@ -2,12 +2,15 @@
 /// <reference path="../typings/bluebird/bluebird.d.ts" />
 /// <reference path="../typings/lodash/lodash.d.ts" />
 /// <reference path="../typings/node/node.d.ts" />
+/// <reference path="../typings/easy-table/easy-table.d.ts" />
 
 import mysql = require("../mysql-bootstrap");
+import pokemonGl = require("../pkmdata/pokemonGl");
 import Promise = require("bluebird");
 import _ = require("lodash");
 import util = require("util");
 import fs = require("fs");
+import Table = require("easy-table");
 
 module CuBoid.Pkmdata {
     export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
@@ -16,10 +19,10 @@ module CuBoid.Pkmdata {
             pool.end(_.noop);
         });
 
-        var fileList = fs.readdirSync("./pkmdata");
+        var fileList = fs.readdirSync("./pkmdata/sql");
         var sqlQueries: { [name: string]: string } = {};
         for (let i = 0; i < fileList.length; i++) {
-            sqlQueries[fileList[i].split(".")[0]] = fs.readFileSync("./pkmdata/" + fileList[i], {encoding: "utf-8"});
+            sqlQueries[fileList[i].split(".")[0]] = fs.readFileSync("./pkmdata/sql/" + fileList[i], {encoding: "utf-8"});
         }
 
         interface MoveIdName {
@@ -151,6 +154,10 @@ module CuBoid.Pkmdata {
             return pool.execSql(sqlQueries["typeatkEfficiency"], [type]);
         }
 
+        function getGlId(name: string): Promise<{ id: string; }[]> {
+            return pool.execSql(sqlQueries["glId"], [name]);
+        }
+
         function getAllLearnMethods(moveid: number, speciesid: number, speciesname: string): Promise<LearnMethods> {
             return Promise.join(getLearnMethods(moveid, speciesid, speciesname),
                 getPreviousEvolution(speciesid)
@@ -194,6 +201,13 @@ module CuBoid.Pkmdata {
         function calcStat(base: number, ev: number, num: number, level: number, increased: number, decreased: number) {
             var ev = ev || 0;
             return Math.floor((Math.floor((31 + 2*base + Math.floor(ev/4)) * level/100) + 5) * (1 + (increased === num ? 0.1 : 0) - (decreased === num ? 0.1 : 0)));
+        }
+
+        function formatUsageTrend(ranking: pokemonGl.Ranking) {
+            if (ranking !== undefined) {
+                return util.format("%s (%d%%)", ranking.name, ranking.usageRate.toFixed(2));
+            }
+            return "";
         }
 
         return {
@@ -418,6 +432,39 @@ module CuBoid.Pkmdata {
                                 return util.format("%s deals %s damage against %s.", e.name_one, damageTypes[e.damage_factor], e.name_two);
                         });
                     }
+                },
+
+                "!usage": (command: Tennu.Command): Tennu.Reply => {
+                    if (command.args.length === 0) {
+                        return "Please specify a Pokémon.";
+                    }
+                    var joined = command.args.join(" ");
+                    return getGlId(joined)
+                    .then((rows): Tennu.Reply => {
+                        if (rows.length === 0) {
+                            return util.format("'%s' is not a valid Pokémon.", joined);
+                        }
+                        pokemonGl.GetGLData(rows[0].id)
+                        .then((data) => {
+                            if ((<any>data.rankingPokemonTrend) === "") {
+                                client.say(command.nickname, util.format("There is no usage data for %s.", data.rankingPokemonInfo.name));
+                            } else {
+                                var table = new Table();
+                                for (let i = 0; i < 10; ++i) {
+                                    table.cell("Used Moves", formatUsageTrend(data.rankingPokemonTrend.wazaInfo[i]));
+                                    table.cell("Used Abilities", formatUsageTrend(data.rankingPokemonTrend.tokuseiInfo[i]));
+                                    table.cell("Used Natures", formatUsageTrend(data.rankingPokemonTrend.seikakuInfo[i]))
+                                    table.cell("Used Items", formatUsageTrend(data.rankingPokemonTrend.itemInfo[i]))
+                                    table.cell("Common Partners", data.rankingPokemonIn[i].name);
+                                    table.cell("Common Counters", data.rankingPokemonDown[i].name);
+                                    table.newRow();
+                                }
+                                client.say(command.nickname, [util.format("Usage data for %s.", data.rankingPokemonInfo.name), " "]);
+                                client.say(command.nickname, table.toString().match(/^.+$/gm));
+                            }
+                        });
+                    });
+
                 }
             },
 
@@ -463,14 +510,26 @@ module CuBoid.Pkmdata {
                     "Return a list of what types are effective, not very effective, etc. against the given types or Pokemon."
                 ],
 
+                "typeatk": [
+                    "type <type>",
+                    " ",
+                    "List all the types the given type deals super effective/not every effective/... damage against."
+                ],
+
                 "types": [
                     "types <type> <type>",
                     " ",
                     "Return if the first type deals neutral, super effective, ... damage against the second."
+                ],
+
+                "usage": [
+                    "usage <pokemon>",
+                    " ",
+                    "Fetch and return usage data for the given Pokémon from Pokémon GL."
                 ]
             },
 
-            commands: ["learn", "ability", "move", "stats", "eggdata", "type", "types"]
+            commands: ["learn", "ability", "move", "stats", "eggdata", "type", "typeatk", "types", "usage"]
        }
     }
 }

@@ -7,10 +7,12 @@
     },
     "filesGlob": [
         "**/*.ts",
-        "!**/*.d.ts"
+        "!**/*.d.ts",
+        "!node_modules/**/*.ts"
     ],
     "files": [
         "mysql-bootstrap.ts",
+        "pkmdata/pokemonGl.ts",
         "pokemonTypes.ts",
         "tennu_plugins/bits.ts",
         "tennu_plugins/calc.ts",
