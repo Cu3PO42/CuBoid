@@ -162,6 +162,27 @@ module CuBoid.Pkmdata {
             return pool.execSql(sqlQueries["itemData"], [name]);
         }
 
+        function getPokemonIdBySpec(spec: string): Promise<{id: number;}[]> {
+            return pool.execSql(sqlQueries["pokemonIdBySpec"], [spec, spec, spec]);
+        }
+
+        var statIds = {
+            hp: 1,
+            atk: 2,
+            def: 3,
+            spatk: 4,
+            spdef: 5,
+            spd: 6
+        };
+
+        function getPokemonIdByStat(stat: string, op: string, constraint: number): Promise<{id: number;}[]> {
+            return pool.execSql(util.format(sqlQueries["pokemonIdByStat"], op), [statIds[stat], constraint]);
+        }
+
+        function getPokemonNameById(id: number): Promise<{name: string}[]> {
+            return pool.execSql(sqlQueries["pokemonNameById"], [id, id]);
+        }
+
         function getAllLearnMethods(moveid: number, speciesid: number, speciesname: string): Promise<LearnMethods> {
             return Promise.join(getLearnMethods(moveid, speciesid, speciesname),
                 getPreviousEvolution(speciesid)
@@ -480,6 +501,32 @@ module CuBoid.Pkmdata {
                             return util.format("%s: %s", rows[0].name, rows[0].short_effect);
                         }
                     })
+                },
+
+                "!search": (command: Tennu.Command) => {
+                    var m: RegExpExecArray, promises: Promise<{id: number}[]>[] = [],
+                        re = /(?:.search|,)\s*([\w\s.]+)\s*(?=,|$)/g;
+                    while (m = re.exec(command.message)) {
+                        promises.push(getPokemonIdBySpec(m[1]));
+                    }
+                    re = /(?:.search|,)\s*(hp|atk|def|spatk|spdef|spd)\s*([<>]=?|=)\s*(\d+)/g;
+                    while (m = re.exec(command.message)) {
+                        promises.push(getPokemonIdByStat(m[1], m[2], parseInt(m[3])));
+                    }
+                    return Promise.all(promises)
+                    .then((results) => {
+                        return _.intersection.apply(_, _.map(results, (e) => { return _.map(e, "id"); }));
+                    })
+                    .then((ids: number[]) => {
+                        return Promise.all(_.map(_.take(ids, 5), getPokemonNameById));
+                    })
+                    .then((names) => {
+                        var res = _.map(names, (e) => { return e[0].name; }).join(", ");
+                        if (res !== "") {
+                            return res;
+                        }
+                        return "Unfortunately I couldn't find any Pokémon matching all of the above."
+                    })
                 }
             },
 
@@ -547,10 +594,17 @@ module CuBoid.Pkmdata {
                     "item <item>",
                     " ",
                     "Return the effect/usage of the item."
+                ],
+
+                "search": [
+                    "search [<ability>/<move>/<type>/<stat op constraint>, ...]*",
+                    " ",
+                    "Return up to five Pokémon that statisfy the given constraints.",
+                    "'stat' can be one of hp/atk/def/spatk/spdef/spd, op can be one of <, >, =, <=, >= and constraint must be a number."
                 ]
             },
 
-            commands: ["learn", "ability", "move", "stats", "eggdata", "type", "typeatk", "types", "usage", "item"]
+            commands: ["learn", "ability", "move", "stats", "eggdata", "type", "typeatk", "types", "usage", "item", "search"]
        }
     }
 }
