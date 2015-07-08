@@ -163,7 +163,7 @@ module CuBoid.Pkmdata {
         }
 
         function getPokemonIdBySpec(spec: string): Promise<{id: number;}[]> {
-            return pool.execSql(sqlQueries["pokemonIdBySpec"], [spec, spec, spec, spec, spec]);
+            return pool.execSql(sqlQueries["pokemonIdBySpec"], [spec, spec, spec, spec, spec, spec]);
         }
 
         var statIds = {

@@ -6,6 +6,12 @@ UNION ALL
 SELECT DISTINCT pokemon.id
 FROM pokemon_moves
 JOIN move_names ON pokemon_moves.move_id = move_names.move_id
+JOIN pokemon ON pokemon.species_id = pokemon_moves.pokemon_id
+WHERE move_names.name = ?
+UNION ALL
+SELECT DISTINCT pokemon.id
+FROM pokemon_moves
+JOIN move_names ON pokemon_moves.move_id = move_names.move_id
 JOIN pokemon_species ON pokemon_species.evolves_from_species_id = pokemon_moves.pokemon_id
 JOIN pokemon ON pokemon.species_id = pokemon_species.id
 WHERE move_names.name = ?
