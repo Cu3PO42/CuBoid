@@ -73,7 +73,7 @@ module CuBoid.Pkmdata {
             damage_class: number;
             type_name: string;
             power: number;
-            accurary: number;
+            accuracy: number;
             pp: number;
             priority: number;
             short_effect: string;
@@ -293,7 +293,7 @@ module CuBoid.Pkmdata {
                                     e.priority,
                                     e.target,
                                     e.power ? e.power.toString() : "--",
-                                    e.accurary ? e.accurary + "%" : "--",
+                                    e.accuracy ? e.accuracy + "%" : "--",
                                     e.pp,
                                     e.pp * 8 / 5
                                 ), parseMoveDescription(e)
