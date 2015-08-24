@@ -627,10 +627,17 @@ module CuBoid.Pkmdata {
                     " ",
                     "Return up to five Pokémon that statisfy the given constraints.",
                     "'stat' can be one of hp/atk/def/spatk/spdef/spd, op can be one of <, >, =, <=, >= and constraint must be a number."
+                ],
+
+                "translate": [
+                    "translate <ability>/<item>/<move>/<pokemon> <language>",
+                    " ",
+                    "Translate the given name to the given language.",
+                    "Both name and language can be supplied in Japanese/English/French/German/Italian."
                 ]
             },
 
-            commands: ["learn", "ability", "move", "stats", "eggdata", "type", "typeatk", "types", "usage", "item", "search"]
+            commands: ["learn", "ability", "move", "stats", "eggdata", "type", "typeatk", "types", "usage", "item", "search", "translate"]
        }
     }
 }
