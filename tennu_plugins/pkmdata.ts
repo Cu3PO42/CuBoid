@@ -183,6 +183,14 @@ module CuBoid.Pkmdata {
             return pool.execSql(sqlQueries["pokemonNameById"], [id, id]);
         }
 
+        function getLanguageId(name: string): Promise<{local_language_id: number}[]> {
+            return pool.execSql(sqlQueries["languageId"], [name]);
+        }
+
+        function getTranslation(name: string, languageId: number): Promise<{name: string}[]> {
+            return pool.execSql(sqlQueries["translation"], [languageId, name, languageId, name, languageId, name, languageId, name])
+        }
+
         function getAllLearnMethods(moveid: number, speciesid: number, speciesname: string): Promise<LearnMethods> {
             return Promise.join(getLearnMethods(moveid, speciesid, speciesname),
                 getPreviousEvolution(speciesid)
@@ -527,6 +535,24 @@ module CuBoid.Pkmdata {
                         }
                         return "Unfortunately I couldn't find any Pokémon matching all of the above."
                     })
+                },
+
+                "!translate": function(command: Tennu.Command) {
+                    return getLanguageId(command.args[command.args.length-1])
+                    .then((rows) => {
+                        if (rows.length) {
+                            return getTranslation(command.args.slice(0, -1).join(" "), rows[0].local_language_id)
+                            .then((rows) => {
+                                if (rows.length) {
+                                    return rows[0].name;
+                                } else {
+                                    return "I can't find anything under that name.";
+                                }
+                            });
+                        } else {
+                            return "I don't know that language.";
+                        }
+                    });
                 }
             },
 
