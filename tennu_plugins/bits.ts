@@ -12,6 +12,9 @@ module CuBoid.Bits {
                 },
                 "!lmlmgtfyfy": function(command: Tennu.Command) {
                     return "http://lmgtfy.com/?q=" + encodeURIComponent(command.args.join(" "));
+                },
+                "!ud": function(command: Tennu.Command) {
+                    return "http://urbandictionary.com/define.php?term=" + encodeURIComponent(command.args.join(" "));
                 }
             },
 
@@ -30,10 +33,15 @@ module CuBoid.Bits {
                     "lmlmgtfyfy <search term>",
                     " ",
                     "Query LMGTFY for the search term."
+                ],
+                "ud": [
+                    "ud <search term>",
+                    " ",
+                    "Search Urban Dictionary for the search term."
                 ]
             },
 
-            commands: ["ping", "docs", "lmlmgtfyfy"]
+            commands: ["ping", "docs", "lmlmgtfyfy", "ud"]
         };
     }
 };
