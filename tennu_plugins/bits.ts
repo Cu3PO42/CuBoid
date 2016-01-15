@@ -10,6 +10,9 @@ module CuBoid.Bits {
                 "!docs": function(command) {
                     return "https://github.com/Cu3PO42/CuBoid/wiki";
                 },
+		"!DF": function(command) {
+		    return "df woz here";
+		},
                 "!lmlmgtfyfy": function(command: Tennu.Command) {
                     return "http://lmgtfy.com/?q=" + encodeURIComponent(command.args.join(" "));
                 },
