@@ -15,6 +15,9 @@ module CuBoid.Bits {
                 },
                 "!ud": function(command: Tennu.Command) {
                     return "http://urbandictionary.com/define.php?term=" + encodeURIComponent(command.args.join(" "));
+                },
+                "!keysave": function(command: Tennu.Command) {
+                    return "https://cu3po42.gitbooks.io/keysave/content/";
                 }
             },
 
