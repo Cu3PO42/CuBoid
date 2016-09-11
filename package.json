@@ -4,8 +4,8 @@
   "description": "Cu3PO42's Pokémon IRC bot.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "screen -AmS cuboid node index.js"
+    "build": "ntsc",
+    "start": "node index.js"
   },
   "author": "Cu3PO42",
   "license": "MIT",
