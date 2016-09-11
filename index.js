@@ -1,8 +1,6 @@
 var _ = require('lodash');
 var fs = require('fs');
 
-require('child_process').execSync("./node_modules/.bin/ntsc");
-
 function run(config) {
     var Client = require('tennu').Client;
 // Create the dependency management object.
