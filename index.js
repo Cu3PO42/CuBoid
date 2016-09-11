@@ -57,9 +57,10 @@ function run(config) {
     process.on('SIGTERM', onabort);
 }
 
-var config = JSON.parse(fs.readFileSync('./config.json', 'utf-8')),
-    local = JSON.parse(fs.readFileSync('./local.json', 'utf-8'));
-
-_.extend(config, local);
+var config = JSON.parse(fs.readFileSync('./config.json', 'utf-8'));
+if(fs.existsSync(process.argv[2])) {
+  let local = JSON.parse(fs.readFileSync(process.argv[2], 'utf-8'));
+  _.extend(config, local);
+}
 
 run(config);
