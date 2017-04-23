@@ -7,11 +7,12 @@ module CuBoid.Calc {
         return {
             handlers: {
                 "!calc": function(command: Tennu.Command) {
-                    var expr = command.args.join(" ");
+                    return "!calc is disabled for the time being due to remote code execution vulnerabilities :(";
+                    /*var expr = command.args.join(" ");
                     try {
                         return expr + " = " + mathjs.eval(expr);
                     } catch (e) {
-                    }
+                    }*/
                 }
             },
 
