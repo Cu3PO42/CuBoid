@@ -4,8 +4,8 @@
   "description": "Cu3PO42's Pokémon IRC bot.",
   "main": "index.js",
   "scripts": {
-    "build": "ntsc",
-    "start": "node index.js"
+    "build": "tsc",
+    "start": "node index.js local.json"
   },
   "author": "Cu3PO42",
   "license": "MIT",
@@ -16,10 +16,12 @@
     "mathjs": "^1.7.0",
     "moment": "^2.10.3",
     "mysql": "^2.7.0",
-    "ntypescript": "^1.201507021036.1",
     "request": "^2.58.0",
     "tennu": "^4.2.4",
     "tennu-admin": "^3.0.4",
     "tennu-control": "^2.0.2"
+  },
+  "devDependencies": {
+    "typescript": "^2.4.2"
   }
 }
