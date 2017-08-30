@@ -139,7 +139,7 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
     }
 
     function getNatureModifiers(name: string): Promise<NatureModifiers[]> {
-        return execSql("natureModifiers", name);
+        return execSql("natureModifiers", name, name);
     }
 
     function getEggdata(name: string): Promise<{species_id: number; name: string; gender_rate: number; hatch_counter: number;}[]> {
