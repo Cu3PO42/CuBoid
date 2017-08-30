@@ -199,7 +199,7 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
         return execSql("pokemonNameById", id, id);
     }
 
-    function getLanguageId(name: string): Promise<{local_language_id: number}[]> {
+    function getLanguageId(name: string): Promise<{language_id: number}[]> {
         return execSql("languageId", name);
     }
 
@@ -541,7 +541,7 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
                 return getLanguageId(command.args[command.args.length-1])
                 .then((rows) => {
                     if (rows.length) {
-                        return getTranslation(command.args.slice(0, -1).join(" "), rows[0].local_language_id)
+                        return getTranslation(command.args.slice(0, -1).join(" "), rows[0].language_id)
                         .then((rows) => {
                             if (rows.length) {
                                 return rows[0].name;
