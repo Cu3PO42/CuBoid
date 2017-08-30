@@ -1,22 +1,46 @@
-import mysql from "../mysql-bootstrap";
+import { createPool, IPool } from "mysql";
 import * as pokemonGl from "../pkmdata/pokemonGl";
 import * as _ from "lodash";
 import * as util from "util";
 import * as fs from "fs";
 import Table = require("easy-table");
 import * as Tennu from "tennu";
+import { CachedPromise, promisify } from "../util";
+
+const readdir = promisify(fs.readdir),
+      readFile = promisify(fs.readFile as
+        (path: string, options: { encoding?: string; flag?: string; } | undefined | null,
+         callback: (err: NodeJS.ErrnoException, data: string) => void) => void);
+
+let conn: CachedPromise<{ pool: IPool, sqlQueries: { [name: string]: string } }>;
+
+async function execSql(queryName: string, ...params: (number | string)[]) {
+    const { pool, sqlQueries } = await conn.value();
+    return await new Promise((resolve, reject) => {
+        pool.getConnection((err, conn) => {
+            if (err) reject(err);
+            conn.query(sqlQueries[queryName] || queryName, params, (err, res) => {
+                if (err) reject(err);
+                resolve(res);
+            });
+        })
+    }) as Promise<any[]>;
+}
 
 export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
-    var pool = mysql.createPool(client.config("veekun"));
+    var pool = createPool(client.config("veekun"));
     client._socket.on("close", () => {
         pool.end(_.noop);
     });
+    conn = new CachedPromise(async () => {
+        const fileList = await readdir("./pkmdata/sql");
+        const sqlQueries: { [name: string]: string } = {};
+        for (let i = 0; i < fileList.length; i++) {
+            sqlQueries[fileList[i].split(".")[0]] = await readFile("./pkmdata/sql/" + fileList[i], {encoding: "utf-8"});
+        }
 
-    var fileList = fs.readdirSync("./pkmdata/sql");
-    var sqlQueries: { [name: string]: string } = {};
-    for (let i = 0; i < fileList.length; i++) {
-        sqlQueries[fileList[i].split(".")[0]] = fs.readFileSync("./pkmdata/sql/" + fileList[i], {encoding: "utf-8"});
-    }
+        return { pool, sqlQueries };
+    });
 
     interface MoveIdName {
         move_id: number;
@@ -24,7 +48,7 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
     }
 
     function getMoveIdName(name: string): Promise<MoveIdName[]> {
-        return pool.execSql(sqlQueries["moveIdName"], [name]);
+        return execSql("moveIdName", name);
     }
 
     interface SpeciesIdName {
@@ -33,11 +57,11 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
     }
 
     function getSpeciesIdName(name: string): Promise<SpeciesIdName[]> {
-        return pool.execSql(sqlQueries["speciesIdName"], [name]);
+        return execSql("speciesIdName", name);
     }
 
     function getPreviousEvolution(id: number): Promise<{evolves_from_species_id: number, name: string}[]> {
-        return pool.execSql(sqlQueries["previousEvolution"], [id]);
+        return execSql("previousEvolution", id);
     }
 
     interface LearnMethod {
@@ -50,15 +74,12 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
         [name: string]: LearnMethod;
     }
 
-    function getLearnMethods(moveid: number, pokemonid: number, pokemonname: string) {
-        return pool.execSql(sqlQueries["learnMethods"], [pokemonname, moveid, pokemonid])
-        .then((rows: LearnMethod[]) => {
-            return _.keyBy(rows, "name");
-        })
+    async function getLearnMethods(moveid: number, pokemonid: number, pokemonname: string) {
+        return _.keyBy((await execSql("learnMethods", pokemonname, moveid, pokemonid)) as LearnMethod[], "name");
     }
 
     function getAbilityInfo(name: string): Promise<{name: string; effect: string;}[]> {
-        return pool.execSql(sqlQueries["abilityInfo"], [name]);
+        return execSql("abilityInfo", name);
     }
 
     interface MoveData {
@@ -78,17 +99,17 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
     }
 
     function getMoveData(name: string): Promise<MoveData[]> {
-        return pool.execSql(sqlQueries["moveData"], [name]);
+        return execSql("moveData", name);
     }
 
     type PokemonTypes = {name: string;}[]
 
     function getPokemonTypes(id: number): Promise<PokemonTypes> {
-        return pool.execSql(sqlQueries["pokemonTypes"], [id]);
+        return execSql("pokemonTypes", id);
     }
 
     function getPokemonTypesByName(name: string): Promise<PokemonTypes> {
-        return pool.execSql(sqlQueries["pokemonTypesByName"], [name, name]);
+        return execSql("pokemonTypesByName", name, name);
     }
 
     interface PokemonBaseStats {
@@ -103,13 +124,13 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
     }
 
     function getPokemonBaseStats(name: string): Promise<PokemonBaseStats[]> {
-        return pool.execSql(sqlQueries["pokemonBaseStats"], [name, name]);
+        return execSql("pokemonBaseStats", name, name);
     }
 
     type PokemonAbilities = {name: string; is_hidden: number; slot: number; }[];
 
     function getPokemonAbilities(id: number): Promise<PokemonAbilities> {
-        return pool.execSql(sqlQueries["pokemonAbilities"], [id]);
+        return execSql("pokemonAbilities", id);
     }
 
     interface NatureModifiers {
@@ -118,45 +139,45 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
     }
 
     function getNatureModifiers(name: string): Promise<NatureModifiers[]> {
-        return pool.execSql(sqlQueries["natureModifiers"], [name]);
+        return execSql("natureModifiers", name);
     }
 
     function getEggdata(name: string): Promise<{species_id: number; name: string; gender_rate: number; hatch_counter: number;}[]> {
-        return pool.execSql(sqlQueries["eggdata"], [name]);
+        return execSql("eggdata", name);
     }
 
     type PokemonEggGroups = {name: string;}[];
 
     function getPokemonEggGroups(id: number): Promise<PokemonEggGroups> {
-        return pool.execSql(sqlQueries["pokemonEggGroups"], [id]);
+        return execSql("pokemonEggGroups", id);
     }
 
     function getTypesEfficiency(types: string[]): Promise<{name: string; damage_factor: number}[]> {
         if (types.length === 1) {
-            return pool.execSql(sqlQueries["typesEfficiencyOne"], types);
+            return execSql("typesEfficiencyOne", ...types);
         } else {
-            return pool.execSql(sqlQueries["typesEfficiencyTwo"], types);
+            return execSql("typesEfficiencyTwo", ...types);
         }
     }
 
     function getTypeEfficiency(types: string[]): Promise<{name_one: string; name_two: string; damage_factor: 0 | 50 | 100 | 200;}[]> {
-        return pool.execSql(sqlQueries["typeEfficiency"], types);
+        return execSql("typeEfficiency", ...types);
     }
 
     function getTypeatkEfficiency(type: string): Promise<{type: string, damage_factor: number}[]> {
-        return pool.execSql(sqlQueries["typeatkEfficiency"], [type]);
+        return execSql("typeatkEfficiency", type);
     }
 
     function getGlId(name: string): Promise<{ id: string; }[]> {
-        return pool.execSql(sqlQueries["glId"], [name]);
+        return execSql("glId", name);
     }
 
     function getItemData(name: string): Promise<{ short_effect: string; name: string; }[]> {
-        return pool.execSql(sqlQueries["itemData"], [name]);
+        return execSql("itemData", name);
     }
 
     function getPokemonIdBySpec(spec: string): Promise<{id: number;}[]> {
-        return pool.execSql(sqlQueries["pokemonIdBySpec"], [spec, spec, spec, spec, spec, spec]);
+        return execSql("pokemonIdBySpec", spec, spec, spec, spec, spec, spec);
     }
 
     var statIds = {
@@ -170,20 +191,20 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
 
     type Stats = "hp" | "atk" | "def" | "spatk" | "spdef" | "spd";
 
-    function getPokemonIdByStat(stat: Stats, op: string, constraint: number): Promise<{id: number;}[]> {
-        return pool.execSql(util.format(sqlQueries["pokemonIdByStat"], op), [statIds[stat], constraint]);
+    async function getPokemonIdByStat(stat: Stats, op: string, constraint: number): Promise<{id: number;}[]> {
+        return await execSql(util.format((await conn.value()).sqlQueries["pokemonIdByStat"], op), statIds[stat], constraint);
     }
 
     function getPokemonNameById(id: number): Promise<{name: string}[]> {
-        return pool.execSql(sqlQueries["pokemonNameById"], [id, id]);
+        return execSql("pokemonNameById", id, id);
     }
 
     function getLanguageId(name: string): Promise<{local_language_id: number}[]> {
-        return pool.execSql(sqlQueries["languageId"], [name]);
+        return execSql("languageId", name);
     }
 
     function getTranslation(name: string, languageId: number): Promise<{name: string}[]> {
-        return pool.execSql(sqlQueries["translation"], [languageId, name, languageId, name, languageId, name, languageId, name])
+        return execSql("translation", languageId, name, languageId, name, languageId, name, languageId, name)
     }
 
     async function getAllLearnMethods(moveid: number, speciesid: number, speciesname: string): Promise<LearnMethods> {
