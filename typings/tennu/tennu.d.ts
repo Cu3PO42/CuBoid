@@ -69,8 +69,8 @@ declare namespace Tennu {
     type PluginExport = any;
 
     type Reply = string|string[]|Promise<string|string[]>;
-    type CommandHandler<T> = <T extends Message>(c: T) => Reply
-    type CommandHandlerProxy = <T>(h: CommandHandler<T>) => CommandHandler<T>;
+    type CommandHandler<T extends Message> = (c: T) => Reply
+    type CommandHandlerProxy = <T extends Message>(h: CommandHandler<T>) => CommandHandler<T>;
 }
 
 declare module "tennu" {

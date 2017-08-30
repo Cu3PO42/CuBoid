@@ -26,11 +26,15 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
         }
     }
 
+    interface RunningCache {
+        [channel: string]: string[];
+    }
+
     var leaderKey: string = client.config("command-trigger"),
         enabler: Tennu.CommandHandlerProxy = imports.enable.getEnabler("typegame"),
         typegameCache: TypegameCache = {},
         scrambleCache: ScrambleCache = {},
-        runningCache: string[] = [];
+        runningCache: RunningCache = {};
 
     function guessType(channel: string, nick: string, guess: string) {
         var cache = typegameCache[channel] = typegameCache[channel] || { running: false },

@@ -53,7 +53,7 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
     function getLearnMethods(moveid: number, pokemonid: number, pokemonname: string) {
         return pool.execSql(sqlQueries["learnMethods"], [pokemonname, moveid, pokemonid])
         .then((rows: LearnMethod[]) => {
-            return _.indexBy(rows, "name");
+            return _.keyBy(rows, "name");
         })
     }
 
@@ -139,7 +139,7 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
         }
     }
 
-    function getTypeEfficiency(types: string[]): Promise<{name_one: string; name_two: string; damage_factor: number;}[]> {
+    function getTypeEfficiency(types: string[]): Promise<{name_one: string; name_two: string; damage_factor: 0 | 50 | 100 | 200;}[]> {
         return pool.execSql(sqlQueries["typeEfficiency"], types);
     }
 
@@ -168,7 +168,9 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
         spd: 6
     };
 
-    function getPokemonIdByStat(stat: string, op: string, constraint: number): Promise<{id: number;}[]> {
+    type Stats = "hp" | "atk" | "def" | "spatk" | "spdef" | "spd";
+
+    function getPokemonIdByStat(stat: Stats, op: string, constraint: number): Promise<{id: number;}[]> {
         return pool.execSql(util.format(sqlQueries["pokemonIdByStat"], op), [statIds[stat], constraint]);
     }
 
@@ -184,18 +186,14 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
         return pool.execSql(sqlQueries["translation"], [languageId, name, languageId, name, languageId, name, languageId, name])
     }
 
-    function getAllLearnMethods(moveid: number, speciesid: number, speciesname: string): Promise<LearnMethods> {
-        return Promise.join(getLearnMethods(moveid, speciesid, speciesname),
-            getPreviousEvolution(speciesid)
-            .then((previous) => {
-                if (previous[0].evolves_from_species_id > 0) {
-                    return getAllLearnMethods(moveid, previous[0].evolves_from_species_id, previous[0].name);
-                } else {
-                    return {};
-                }
-        })).spread((methods_one, methods_two) => {
-            return _.defaults<any, LearnMethods>(methods_one, methods_two);
-        });
+    async function getAllLearnMethods(moveid: number, speciesid: number, speciesname: string): Promise<LearnMethods> {
+        const learnMethods1 = await getLearnMethods(moveid, speciesid, speciesname);
+        const previous = await getPreviousEvolution(speciesid);
+        let learnMethods2 = {};
+        if (previous[0].evolves_from_species_id > 0) {
+            learnMethods2 = await getAllLearnMethods(moveid, previous[0].evolves_from_species_id, previous[0].name);
+        }
+        return { ...learnMethods1, ...learnMethods2 };
     }
 
     function parseDescription(description: string) {
@@ -238,31 +236,28 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
 
     return {
         handlers: {
-            "!learn": (command: Tennu.Command) => {
-                var joined = command.args.join(" ");
-                return Promise.join<any>(getMoveIdName(joined), getSpeciesIdName(joined))
-                .spread((moveid: MoveIdName[], pokemonid: SpeciesIdName[]) => {
-                    if (moveid.length === 0) {
-                        return util.format("'%s' does not end in a valid move!", joined);
-                    } else if (pokemonid.length === 0) {
-                        return util.format("'%s' does not begin with a valid Pokémon!", joined);
+            "!learn": async (command: Tennu.Command) => {
+                const joined = command.args.join(" ");
+                const moveid = await getMoveIdName(joined);
+                const pokemonid = await getSpeciesIdName(joined);
+                if (moveid.length === 0) {
+                    return util.format("'%s' does not end in a valid move!", joined);
+                } else if (pokemonid.length === 0) {
+                    return util.format("'%s' does not begin with a valid Pokémon!", joined);
+                } else {
+                    const methods = await getAllLearnMethods(moveid[0].move_id, pokemonid[0].pokemon_species_id, pokemonid[0].name);
+                    if (!_.isEmpty(methods)) {
+                        var methodString = _.map(methods, (e) => {
+                            return util.format("\x02%s\x02 %s%s",
+                                e.name,
+                                e.method_string,
+                                e.pokemonname !== pokemonid[0].name ? " as " + e.pokemonname : "");
+                        }).join("; via ");
+                        return util.format("%s can learn %s via %s.", pokemonid[0].name, moveid[0].name, methodString).match(/.{1,400}(?: |$)/g);
                     } else {
-                        return getAllLearnMethods(moveid[0].move_id, pokemonid[0].pokemon_species_id, pokemonid[0].name)
-                        .then((methods) => {
-                            if (!_.isEmpty(methods)) {
-                                var methodString = _.map(methods, (e) => {
-                                    return util.format("\x02%s\x02 %s%s",
-                                        e.name,
-                                        e.method_string,
-                                        e.pokemonname !== pokemonid[0].name ? " as " + e.pokemonname : "");
-                                }).join("; via ");
-                                return util.format("%s can learn %s via %s.", pokemonid[0].name, moveid[0].name, methodString).match(/.{1,400}(?: |$)/g);
-                            } else {
-                                return util.format("%s cannot learn %s.", pokemonid[0].name, moveid[0].name);
-                            }
-                        });
+                        return util.format("%s cannot learn %s.", pokemonid[0].name, moveid[0].name);
                     }
-                })
+                }
             },
 
             "!ability": (command: Tennu.Command) => {
@@ -305,93 +300,84 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
                 })
             },
 
-            "!stats": (command: Tennu.Command) => {
-                var joined = command.args.join(" ");
+            "!stats": async (command: Tennu.Command) => {
+                const joined = command.args.join(" ");
 
-                return Promise.join<any>(getPokemonBaseStats(joined), getNatureModifiers(joined))
-                .spread((pokemon: PokemonBaseStats[], nature: NatureModifiers[]) => {
-                    if (pokemon.length > 0) {
-                        var e = pokemon[0],
-                            m = command.message.match(/(?:lvl|level)\s*(\d+)/i),
-                            level: number = undefined,
-                            evs: any = {},
-                            types = getPokemonTypes(e.id);
+                const pokemon = await getPokemonBaseStats(joined);
+                const nature = await getNatureModifiers(joined);
+                if (pokemon.length > 0) {
+                    var e = pokemon[0],
+                        m = command.message.match(/(?:lvl|level)\s*(\d+)/i),
+                        level: number = undefined,
+                        evs: any = {},
+                        types = await getPokemonTypes(e.id);
 
-                        if (m) {
-                            level = parseInt(m[1]);
-                        }
-
-                        while (m = /(\d+)\s*(hp|atk|def|spatk|spdef|spd)/ig.exec(command.message)) {
-                            evs[m[2]] = parseInt(m[1]);
-                        }
-
-                        if (level === undefined && _.isEmpty(evs) && !nature.length) {
-                            return Promise.join(types, getPokemonAbilities(e.id))
-                            .spread((types: PokemonTypes, abilities: PokemonAbilities) => {
-                                return util.format("%s: (%s) %d/%d/%d/%d/%d/%d %s | BST: %d",
-                                    e.name,
-                                    _.map(types, "name").join("/"),
-                                    e.hp,
-                                    e.atk,
-                                    e.def,
-                                    e.spatk,
-                                    e.spdef,
-                                    e.spd,
-                                    _.map(abilities, (a) => { return util.format("[%s] %s", a.is_hidden ? "HA" : (a.slot - 1).toString(), a.name)}).join(" "),
-                                    e.hp + e.atk + e.def + e.spatk + e.spdef + e.spd
-                                );
-                            })
-                        } else {
-                            return types
-                            .then((types) => {
-                                var increased_stat = 2, decreased_stat = 2;
-                                if (level === undefined)
-                                    level = 100;
-                                if (nature.length) {
-                                    increased_stat = nature[0].increased_stat_id;
-                                    decreased_stat = nature[0].decreased_stat_id;
-                                }
-
-                                return util.format("%s: (%s) %d/%d/%d/%d/%d/%d",
-                                    e.name,
-                                    _.map(types, "name").join("/"),
-                                    Math.floor((31 + 2*e.hp + Math.floor((evs.hp || 0)/4)) * level/100) + 10 + level,
-                                    calcStat(e.atk, evs.atk, 2, level, increased_stat, decreased_stat),
-                                    calcStat(e.def, evs.def, 3, level, increased_stat, decreased_stat),
-                                    calcStat(e.spatk, evs.spatk, 4, level, increased_stat, decreased_stat),
-                                    calcStat(e.spdef, evs.spdef, 5, level, increased_stat, decreased_stat),
-                                    calcStat(e.spd, evs.spd, 6, level, increased_stat, decreased_stat)
-                                );
-                            })
-                        }
-                    } else {
-                        return util.format("'%s' does not begin with a valid Pokémon.", joined);
+                    if (m) {
+                        level = parseInt(m[1]);
                     }
-                })
+
+                    while (m = /(\d+)\s*(hp|atk|def|spatk|spdef|spd)/ig.exec(command.message)) {
+                        evs[m[2]] = parseInt(m[1]);
+                    }
+
+                    if (level === undefined && _.isEmpty(evs) && !nature.length) {
+                        const abilities = await getPokemonAbilities(e.id);
+                        return util.format("%s: (%s) %d/%d/%d/%d/%d/%d %s | BST: %d",
+                            e.name,
+                            _.map(types, "name").join("/"),
+                            e.hp,
+                            e.atk,
+                            e.def,
+                            e.spatk,
+                            e.spdef,
+                            e.spd,
+                            _.map(abilities, (a) => { return util.format("[%s] %s", a.is_hidden ? "HA" : (a.slot - 1).toString(), a.name)}).join(" "),
+                            e.hp + e.atk + e.def + e.spatk + e.spdef + e.spd
+                        );
+                    } else {
+                        var increased_stat = 2, decreased_stat = 2;
+                        if (level === undefined)
+                            level = 100;
+                        if (nature.length) {
+                            increased_stat = nature[0].increased_stat_id;
+                            decreased_stat = nature[0].decreased_stat_id;
+                        }
+
+                        return util.format("%s: (%s) %d/%d/%d/%d/%d/%d",
+                            e.name,
+                            _.map(types, "name").join("/"),
+                            Math.floor((31 + 2*e.hp + Math.floor((evs.hp || 0)/4)) * level/100) + 10 + level,
+                            calcStat(e.atk, evs.atk, 2, level, increased_stat, decreased_stat),
+                            calcStat(e.def, evs.def, 3, level, increased_stat, decreased_stat),
+                            calcStat(e.spatk, evs.spatk, 4, level, increased_stat, decreased_stat),
+                            calcStat(e.spdef, evs.spdef, 5, level, increased_stat, decreased_stat),
+                            calcStat(e.spd, evs.spd, 6, level, increased_stat, decreased_stat)
+                        );
+                    }
+                } else {
+                    return util.format("'%s' does not begin with a valid Pokémon.", joined);
+                }
             },
 
-            "!eggdata": (command: Tennu.Command) => {
-                var joined = command.args.join(" ");
-                return getEggdata(joined)
-                .then((rows) => {
-                    var e = rows[0];
-                    if (rows.length) {
-                        return Promise.join(getPokemonAbilities(e.species_id), getPokemonEggGroups(e.species_id))
-                        .spread((abilities: PokemonAbilities, eggGroups: PokemonEggGroups) => {
-                            var partitionedAbilities = _.partition(abilities, "is_hidden");
-                            return util.format("%s: [Gender] %s | [Hatch Cycles] %s | [Egg Groups] %s | [Abilities] %s %s",
-                                e.name,
-                                e.gender_rate !== -1 ? util.format("%d%% M, %d%% F", 100-e.gender_rate*12.5, e.gender_rate*12.5) : "Genderless",
-                                e.hatch_counter * 256,
-                                _.map(eggGroups, "name").join("/"),
-                                _.map(partitionedAbilities[1], "name").join("/"),
-                                partitionedAbilities[0].length ? "DW: " + partitionedAbilities[0][0].name : ""
-                            );
-                        })
-                    } else {
-                        return util.format("'%s' is not a valid Pokémon.", joined);
-                    }
-                });
+            "!eggdata": async (command: Tennu.Command) => {
+                const joined = command.args.join(" ");
+                const rows = await getEggdata(joined);
+                var e = rows[0];
+                if (rows.length) {
+                    const abilities = await getPokemonAbilities(e.species_id);
+                    const eggGroups = await getPokemonEggGroups(e.species_id);
+                    var partitionedAbilities = _.partition(abilities, "is_hidden");
+                    return util.format("%s: [Gender] %s | [Hatch Cycles] %s | [Egg Groups] %s | [Abilities] %s %s",
+                        e.name,
+                        e.gender_rate !== -1 ? util.format("%d%% M, %d%% F", 100-e.gender_rate*12.5, e.gender_rate*12.5) : "Genderless",
+                        e.hatch_counter * 256,
+                        _.map(eggGroups, "name").join("/"),
+                        _.map(partitionedAbilities[1], "name").join("/"),
+                        partitionedAbilities[0].length ? "DW: " + partitionedAbilities[0][0].name : ""
+                    );
+                } else {
+                    return util.format("'%s' is not a valid Pokémon.", joined);
+                }
             },
 
             "!type": (command: Tennu.Command): Tennu.Reply => {
@@ -512,7 +498,7 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
                 }
                 re = /(?:.search|,)\s*(hp|atk|def|spatk|spdef|spd)\s*([<>]=?|=)\s*(\d+)/g;
                 while (m = re.exec(command.message)) {
-                    promises.push(getPokemonIdByStat(m[1], m[2], parseInt(m[3])));
+                    promises.push(getPokemonIdByStat(m[1] as Stats, m[2], parseInt(m[3])));
                 }
                 return Promise.all(promises)
                 .then((results) => {

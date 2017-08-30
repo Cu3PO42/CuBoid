@@ -14,6 +14,21 @@ interface StoredMessage {
 // TODO Cache database
 // TODO Add delayed tell
 
+interface Resolver<T> {
+    resolve(e: T): void;
+    reject(err: Error): void;
+    promise: Promise<T>;
+}
+
+function defer<T>() {
+    let res: Resolver<T> = {} as Resolver<T>;
+    res.promise = new Promise((resolve, reject) => {
+        res.resolve = resolve;
+        res.reject = reject;
+    });
+    return res;
+}
+
 export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
     var pool = mysql.createPool(client.config("tell-database")),
         messageExtractor = /.tell\s*\S+\s*(.*)$/;
@@ -22,28 +37,28 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
         pool.end(_.noop);
     });
 
-    var registeredResolvers: { [nick: string]: Promise.Resolver<boolean> } = {},
+    var registeredResolvers: { [nick: string]: Resolver<boolean> } = {},
         nickserv: string = client.config("nickserv").toLowerCase();
 
     function isRegistered(name: string) {
-        var deferred = Promise.defer<boolean>();
+        var deferred = defer<boolean>();
         registeredResolvers[name.toLowerCase()] = deferred;
         client.say(nickserv, "info " + name);
         return deferred.promise;
     }
 
-    var confirmResolvers: { [nick: string]: Promise.Resolver<boolean> } = {};
+    var confirmResolvers: { [nick: string]: Resolver<boolean> } = {};
 
     function confirmTell(name: string) {
-        var deferred = Promise.defer<boolean>();
+        var deferred = defer<boolean>();
         confirmResolvers[name] = deferred;
         return deferred.promise;
     }
 
-    var receiveResolvers: { [nick: string]: Promise.Resolver<boolean> } = {};
+    var receiveResolvers: { [nick: string]: Resolver<boolean> } = {};
 
     function confirmReceive(name: string) {
-        var deferred = Promise.defer<boolean>();
+        var deferred = defer<boolean>();
         receiveResolvers[name.toLowerCase()] = deferred;
         client.say(nickserv, "status " + name);
         return deferred.promise;
@@ -51,38 +66,30 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
 
     return {
         handlers: {
-            "!tell": (command: Tennu.Command) => {
+            "!tell": async (command: Tennu.Command) => {
                 var resolver = confirmResolvers[command.nickname];
                 if (resolver) {
                     resolver.resolve(false);
                     confirmResolvers[command.nickname] = undefined;
                 }
-                return client.whois(command.nickname)
-                .then((user) => {
-                    if (!user.is_ok) {
-                        return "There was a problem, please try again soon!";
+                const user = await client.whois(command.nickname);
+                if (!user.is_ok) {
+                    return "There was a problem, please try again soon!";
+                }
+                if (user.value.identified) {
+                    var message = command.message.match(messageExtractor)[1];
+                    const registered = await isRegistered(command.args[0]);
+                    if (registered) {
+                        return true;
                     }
-                    if (user.value.identified) {
-                        var message = command.message.match(messageExtractor)[1];
-                        return isRegistered(command.args[0])
-                        .then((registered) => {
-                            console.log(registered);
-                            if (registered) {
-                                return true;
-                            }
-                            client.say(command.nickname, [util.format("The user '%s' is not registered. Are you sure you want to send this message, %s?", command.args[0], command.nickname), "Please use $confirmtell to confirm or $aborttell to abort."]);
-                            return confirmTell(command.nickname);
-                        })
-                        .then((dotell) => {
-                            if (dotell) {
-                                pool.execSql("INSERT INTO messages (from_user, to_user, message) VALUES (?, ?, ?)", [user.value.identifiedas, command.args[0], message]);
-                                return "I'll pass that on."
-                            }
-                            return "Aborted.";
-                        });
+                    client.say(command.nickname, [util.format("The user '%s' is not registered. Are you sure you want to send this message, %s?", command.args[0], command.nickname), "Please use $confirmtell to confirm or $aborttell to abort."]);
+                    if (await confirmTell(command.nickname)) {
+                        pool.execSql("INSERT INTO messages (from_user, to_user, message) VALUES (?, ?, ?)", [user.value.identifiedas, command.args[0], message]);
+                        return "I'll pass that on."
                     }
-                    return "You need to be identified to use this service."
-                });
+                    return "Aborted.";
+                }
+                return "You need to be identified to use this service."
             },
 
             notice: (notice: Tennu.MessageNotice) => {

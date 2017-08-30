@@ -64,37 +64,37 @@ export interface PokemonGlResponse {
     timezoneName: string
 }
 
-export function GetGLData(pokemon: string) {
-    var deferred = Promise.defer<PokemonGlResponse>();
-    request.post("http://3ds.pokemon-gl.com/frontendApi/gbu/getSeasonPokemonDetail", {
-        headers: {
-            "Origin": "http://3ds.pokemon-gl.com",
-            "Referer": "http://3ds.pokemon-gl.com/battle/oras/",
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "User-Agent": "CuBoid"
-        },
-        form: {
-            "languageId": "2",
-            "seasonId": "108",
-            "battleType": "2",
-            "timezone": "BST",
-            "pokemonId": pokemon,
-            "displayNumberWaza": "10",
-            "displayNumberTokusei": "3",
-            "displayNumberSeikaku": "10",
-            "displayNumberItem": "10",
-            "displayNumberLevel": "10",
-            "displayNumberPokemonIn": "10",
-            "displayNumberPokemonDown": "10",
-            "displayNumberPokemonDownWaza": "10",
-            "timestamp": Date.now().toString()
-        }
-    }, (err, response, body) => {
-        if (err) {
-            deferred.reject(err);
-        } else {
-            deferred.resolve(JSON.parse(body));
-        }
+export function GetGLData(pokemon: string): Promise<PokemonGlResponse> {
+    return new Promise((resolve, reject) => {
+        request.post("http://3ds.pokemon-gl.com/frontendApi/gbu/getSeasonPokemonDetail", {
+            headers: {
+                "Origin": "http://3ds.pokemon-gl.com",
+                "Referer": "http://3ds.pokemon-gl.com/battle/oras/",
+                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "User-Agent": "CuBoid"
+            },
+            form: {
+                "languageId": "2",
+                "seasonId": "108",
+                "battleType": "2",
+                "timezone": "BST",
+                "pokemonId": pokemon,
+                "displayNumberWaza": "10",
+                "displayNumberTokusei": "3",
+                "displayNumberSeikaku": "10",
+                "displayNumberItem": "10",
+                "displayNumberLevel": "10",
+                "displayNumberPokemonIn": "10",
+                "displayNumberPokemonDown": "10",
+                "displayNumberPokemonDownWaza": "10",
+                "timestamp": Date.now().toString()
+            }
+        }, (err, response, body) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(JSON.parse(body));
+            }
+        });
     });
-    return deferred.promise;
 }

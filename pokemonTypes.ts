@@ -769,7 +769,7 @@ export var pokemon_array = [
     { name: 'Mega Audino', types: [ 'Normal', 'Fairy' ] },
     { name: 'Mega Diancie', types: [ 'Rock', 'Fairy' ] }];
 
-export var types = {
+export var types: { [type: string]: number } = {
     Normal: 0,
     Fighting: 1,
     Flying: 2,
@@ -787,7 +787,7 @@ export var types = {
     Ice: 14,
     Dragon: 15,
     Dark: 16,
-    Fairy: 17
+    Fairy: 17,
 }
 
 export var type_list: string[] = [];

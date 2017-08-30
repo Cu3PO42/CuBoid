@@ -4,6 +4,7 @@ import * as Tennu from "tennu";
 export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
     var requiresAdmin: Tennu.CommandHandlerProxy = imports.admin.requiresAdmin,
         storage = client.config("enabled") || {};
+
     return {
         handlers: {
             "!enable": requiresAdmin((command: Tennu.Command) => {

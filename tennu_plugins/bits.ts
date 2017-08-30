@@ -3,10 +3,10 @@ import * as Tennu from "tennu";
 export function init(client: Tennu.Client, imports: Tennu.PluginImports): Tennu.PluginExport {
     return {
         handlers: {
-            "!ping": function(command) {
+            "!ping": function(command: Tennu.Command) {
                 return "PONG";
             },
-            "!docs": function(command) {
+            "!docs": function(command: Tennu.Command) {
                 return "https://github.com/Cu3PO42/CuBoid/wiki";
             },
             "!lmlmgtfyfy": function(command: Tennu.Command) {
