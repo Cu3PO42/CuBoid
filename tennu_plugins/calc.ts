@@ -1,7 +1,3 @@
-/// <reference path="../typings/tennu/tennu.d.ts"/>
-/// <reference path="../typings/mathjs/mathjs.d.ts"/>
-import mathjs = require("mathjs");
-
 export function init(client: Tennu.Client, imports: Tennu.PluginImports): Tennu.PluginExport {
     return {
         handlers: {

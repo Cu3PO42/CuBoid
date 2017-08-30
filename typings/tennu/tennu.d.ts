@@ -1,5 +1,3 @@
-/// <reference path="../bluebird/bluebird.d.ts"/>
-
 declare module Tennu {
     interface Client {
         whois(user: string): Promise<{

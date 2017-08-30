@@ -1,6 +1,4 @@
 /// <reference path="../typings/tennu/tennu.d.ts" />
-/// <reference path="../typings/lodash/lodash.d.ts" />
-/// <reference path="../typings/node/node.d.ts" />
 
 import _ = require("lodash");
 import moment = require("moment");

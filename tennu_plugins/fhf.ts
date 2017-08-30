@@ -1,4 +1,3 @@
-/// <reference path="../typings/lodash/lodash.d.ts" />
 /// <reference path="../typings/tennu/tennu.d.ts"/>
 import _ = require("lodash");
 

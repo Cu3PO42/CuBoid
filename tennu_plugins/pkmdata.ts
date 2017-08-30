@@ -1,8 +1,4 @@
 /// <reference path="../typings/tennu/tennu.d.ts" />
-/// <reference path="../typings/bluebird/bluebird.d.ts" />
-/// <reference path="../typings/lodash/lodash.d.ts" />
-/// <reference path="../typings/node/node.d.ts" />
-/// <reference path="../typings/easy-table/easy-table.d.ts" />
 
 import mysql = require("../mysql-bootstrap");
 import pokemonGl = require("../pkmdata/pokemonGl");

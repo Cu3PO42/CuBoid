@@ -1,8 +1,3 @@
-/// <reference path="../typings/moment/moment.d.ts" />
-/// <reference path="../typings/bluebird/bluebird.d.ts" />
-/// <reference path="../typings/lodash/lodash.d.ts" />
-/// <reference path="../typings/node/node.d.ts" />
-
 import mysql = require("../mysql-bootstrap");
 import moment = require("moment");
 import Promise = require("bluebird");

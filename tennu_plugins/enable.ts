@@ -1,4 +1,3 @@
-/// <reference path="../typings/node/node.d.ts" />
 /// <reference path="../typings/tennu/tennu.d.ts"/>
 import util = require("util");
 

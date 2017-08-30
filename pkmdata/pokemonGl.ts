@@ -1,6 +1,3 @@
-/// <reference path="../typings/request/request.d.ts" />
-/// <reference path="../typings/bluebird/bluebird.d.ts"/>
-
 import request = require("request");
 import Promise = require("bluebird");
 
