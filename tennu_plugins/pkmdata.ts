@@ -367,7 +367,7 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
                         return util.format("%s: (%s) %d/%d/%d/%d/%d/%d",
                             e.name,
                             _.map(types, "name").join("/"),
-                            Math.floor((31 + 2*e.hp + Math.floor((evs.hp || 0)/4)) * level/100) + 10 + level,
+                            e.id === 292 ? 1 : Math.floor((31 + 2*e.hp + Math.floor((evs.hp || 0)/4)) * level/100) + 10 + level,
                             calcStat(e.atk, evs.atk, 2, level, increased_stat, decreased_stat),
                             calcStat(e.def, evs.def, 3, level, increased_stat, decreased_stat),
                             calcStat(e.spatk, evs.spatk, 4, level, increased_stat, decreased_stat),
