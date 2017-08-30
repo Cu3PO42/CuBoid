@@ -4,22 +4,30 @@
   "description": "Cu3PO42's Pokémon IRC bot.",
   "main": "index.js",
   "scripts": {
-    "build": "ntsc",
-    "start": "node index.js"
+    "build": "tsc",
+    "start": "node index.js local.json"
   },
   "author": "Cu3PO42",
   "license": "MIT",
   "dependencies": {
-    "bluebird": "^2.9.27",
     "easy-table": "^1.0.0",
-    "lodash": "^3.9.3",
-    "mathjs": "^1.7.0",
+    "lodash": "^4.17.4",
+    "mathjs": "^3.16.3",
     "moment": "^2.10.3",
     "mysql": "^2.7.0",
-    "ntypescript": "^1.201507021036.1",
     "request": "^2.58.0",
     "tennu": "^4.2.4",
-    "tennu-admin": "^3.0.4",
+    "tennu-admin": "^4.0.1",
     "tennu-control": "^2.0.2"
+  },
+  "devDependencies": {
+    "@types/easy-table": "0.0.31",
+    "@types/form-data": "^2.2.0",
+    "@types/lodash": "^4.14.74",
+    "@types/moment": "^2.13.0",
+    "@types/mysql": "0.0.34",
+    "@types/node": "^8.0.26",
+    "@types/request": "^2.0.3",
+    "typescript": "^2.4.2"
   }
 }

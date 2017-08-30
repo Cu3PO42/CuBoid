@@ -1,6 +1,4 @@
-/// <reference path="../bluebird/bluebird.d.ts"/>
-
-declare module Tennu {
+declare namespace Tennu {
     interface Client {
         whois(user: string): Promise<{
             is_ok: boolean;
@@ -9,7 +7,7 @@ declare module Tennu {
                 identifiedas: string;
             }
         }>;
-        say(channel: string, msg: Reply);
+        say(channel: string, msg: Reply): void;
         config(key: string): any;
         _socket: any;
     }
@@ -71,6 +69,10 @@ declare module Tennu {
     type PluginExport = any;
 
     type Reply = string|string[]|Promise<string|string[]>;
-    type CommandHandler<T> = <T extends Message>(c: T) => Reply
-    type CommandHandlerProxy = <T>(h: CommandHandler<T>) => CommandHandler<T>;
+    type CommandHandler<T extends Message> = (c: T) => Reply
+    type CommandHandlerProxy = <T extends Message>(h: CommandHandler<T>) => CommandHandler<T>;
+}
+
+declare module "tennu" {
+    export = Tennu;
 }

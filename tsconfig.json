@@ -1,26 +1,21 @@
 {
+    "compileOnSave": false,
     "compilerOptions": {
         "module": "commonjs",
+         "target": "es2015",
         "removeComments": true,
         "preserveConstEnums": true,
-        "sourceMap": true
-    },
-    "filesGlob": [
-        "**/*.ts",
-        "!**/*.d.ts",
-        "!node_modules/**/*.ts"
-    ],
-    "files": [
-        "mysql-bootstrap.ts",
-        "pkmdata/pokemonGl.ts",
-        "pokemonTypes.ts",
-        "tennu_plugins/bits.ts",
-        "tennu_plugins/calc.ts",
-        "tennu_plugins/enable.ts",
-        "tennu_plugins/fhf.ts",
-        "tennu_plugins/npr.ts",
-        "tennu_plugins/pkmdata.ts",
-        "tennu_plugins/tell.ts",
-        "tennu_plugins/typegame.ts"
-    ]
+        "sourceMap": true,
+        "noImplicitAny": true,
+        "allowSyntheticDefaultImports": true,
+        "alwaysStrict": true,
+        "charset": "utf-8",
+        "moduleResolution": "node",
+        "lib": [
+          "dom",
+          "es2015",
+          "es2016",
+          "es2017"
+        ]
+    }
 }
