@@ -1,5 +1,3 @@
-/// <reference path="../typings/tennu/tennu.d.ts" />
-
 import mysql = require("../mysql-bootstrap");
 import pokemonGl = require("../pkmdata/pokemonGl");
 import Promise = require("bluebird");
@@ -7,6 +5,7 @@ import _ = require("lodash");
 import util = require("util");
 import fs = require("fs");
 import Table = require("easy-table");
+import * as Tennu from "tennu";
 
 export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
     var pool = mysql.createPool(client.config("veekun"));

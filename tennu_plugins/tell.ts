@@ -3,6 +3,7 @@ import moment = require("moment");
 import Promise = require("bluebird");
 import _ = require("lodash");
 import util = require("util");
+import * as Tennu from "tennu";
 
 interface StoredMessage {
     from_user: string;

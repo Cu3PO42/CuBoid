@@ -1,3 +1,5 @@
+import * as Tennu from "tennu";
+
 export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
     var enabler:Tennu.CommandHandlerProxy = imports.enable.getEnabler("npr"),
         test = [1,2,3],

@@ -1,3 +1,5 @@
+import * as Tennu from "tennu";
+
 export function init(client: Tennu.Client, imports: Tennu.PluginImports): Tennu.PluginExport {
     return {
         handlers: {

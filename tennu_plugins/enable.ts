@@ -1,5 +1,5 @@
-/// <reference path="../typings/tennu/tennu.d.ts"/>
 import util = require("util");
+import * as Tennu from "tennu";
 
 export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
     var requiresAdmin: Tennu.CommandHandlerProxy = imports.admin.requiresAdmin,
