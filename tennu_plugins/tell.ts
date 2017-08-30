@@ -11,7 +11,6 @@ interface StoredMessage {
     message: string;
 }
 
-// TODO Cache database
 // TODO Add delayed tell
 
 interface Resolver<T> {
@@ -48,6 +47,35 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
             })
         }) as Promise<any[]>;
     }
+
+    let messageCache = new Map<string, boolean>();
+    let cacheSize = 0;
+    const MAX_CACHE_SIZE = 500;
+
+    function setCachedValue(user: string, val: boolean) {
+        if (cacheSize++ === MAX_CACHE_SIZE) {
+            cacheSize = 1;
+            messageCache = new Map<string, boolean>();
+        }
+
+        messageCache.set(user, val);
+    }
+
+    async function checkMessagesForUser(user: string) {
+        const messages = await execSql("SELECT * FROM messages WHERE to_user = ?", user);
+        if (messages.length) {
+            if (await confirmReceive(user)) {
+                execSql("DELETE FROM messages WHERE to_user = ?", user);
+                client.say(user, _.map(messages, (e) => { return util.format("%s: %s said %s to tell you: %s", user, e.from_user, moment(e.time).fromNow(), e.message); }))
+                setCachedValue(user, false);
+            } else {
+                setCachedValue(user, true);
+            }
+        } else {
+            setCachedValue(user, false);
+        }
+    }
+
 
     var registeredResolvers: { [nick: string]: Resolver<boolean> } = {},
         nickserv: string = client.config("nickserv").toLowerCase();
@@ -88,19 +116,24 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
                 if (!user.is_ok) {
                     return "There was a problem, please try again soon!";
                 }
-                if (user.value.identified) {
-                    var message = command.message.match(messageExtractor)[1];
-                    const registered = await isRegistered(command.args[0]);
-                    if (!registered) {
-                        client.say(command.nickname, [util.format("The user '%s' is not registered. Are you sure you want to send this message, %s?", command.args[0], command.nickname), "Please use $confirmtell to confirm or $aborttell to abort."]);
-                        if (!await confirmTell(command.nickname)) {
-                            return "Aborted.";
-                        }
-                    }
-                    execSql("INSERT INTO messages (from_user, to_user, message) VALUES (?, ?, ?)", user.value.identifiedas, command.args[0], message);
-                    return "I'll pass that on."
+                if (!user.value.identified) {
+                    return "You need to be identified to use this service.";
                 }
-                return "You need to be identified to use this service."
+                var message = command.message.match(messageExtractor)[1];
+                const registered = await isRegistered(command.args[0]);
+                if (!registered) {
+                    client.say(command.nickname, [util.format("The user '%s' is not registered. Are you sure you want to send this message, %s?", command.args[0], command.nickname), "Please use $confirmtell to confirm or $aborttell to abort."]);
+                    if (!await confirmTell(command.nickname)) {
+                        return "Aborted.";
+                    }
+                }
+                try {
+                    await execSql("INSERT INTO messages (from_user, to_user, message) VALUES (?, ?, ?)", user.value.identifiedas, command.args[0], message);
+                    setCachedValue(command.args[0], true);
+                    return "I'll pass that on."
+                } catch (e) {
+                    return "Uh oh, something went wrong.";
+                }
             },
 
             notice: (notice: Tennu.MessageNotice) => {
@@ -141,18 +174,10 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
             },
 
             privmsg: (message: Tennu.MessagePrivmsg) => {
-                execSql("SELECT * FROM messages WHERE to_user = ?", message.nickname)
-                .then((messages: StoredMessage[]) => {
-                    if (messages.length) {
-                        confirmReceive(message.nickname)
-                        .then((ok) => {
-                            if (ok) {
-                                execSql("DELETE FROM messages WHERE to_user = ?", message.nickname);
-                                client.say(message.nickname, _.map(messages, (e) => { return util.format("%s: %s said %s to tell you: %s", message.nickname, e.from_user, moment(e.time).fromNow(), e.message); }))
-                            }
-                        })
-                    }
-                })
+                const cached = messageCache.get(message.nickname);
+                if (cached === false) return;
+
+                checkMessagesForUser(message.nickname);
             }
         },
 
