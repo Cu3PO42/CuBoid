@@ -1,8 +1,7 @@
-import mysql = require("../mysql-bootstrap");
-import moment = require("moment");
-import Promise = require("bluebird");
-import _ = require("lodash");
-import util = require("util");
+import mysql from "../mysql-bootstrap";
+import * as moment from "moment";
+import * as _ from "lodash";
+import * as util from "util";
 import * as Tennu from "tennu";
 
 interface StoredMessage {

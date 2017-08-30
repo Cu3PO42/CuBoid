@@ -1,4 +1,4 @@
-import util = require("util");
+import * as util from "util";
 import * as Tennu from "tennu";
 
 export function init(client: Tennu.Client, imports: Tennu.PluginImports) {

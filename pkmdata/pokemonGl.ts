@@ -1,5 +1,4 @@
-import request = require("request");
-import Promise = require("bluebird");
+import request from "request";
 
 interface Pokemon {
     formName: string;

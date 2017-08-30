@@ -1,7 +1,7 @@
-import _ = require("lodash");
-import moment = require("moment");
-import util = require("util");
-import Data = require("../pokemonTypes");
+import * as _ from "lodash";
+import * as moment from "moment";
+import * as util from "util";
+import * as Data from "../pokemonTypes";
 import * as Tennu from "tennu";
 
 export function init(client: Tennu.Client, imports: Tennu.PluginImports) {

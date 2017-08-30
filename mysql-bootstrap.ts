@@ -1,8 +1,4 @@
-/// <reference path="typings/mysql/mysql.d.ts" />
-/// <reference path="./typings/bluebird/bluebird.d.ts" />
-
-import mysql = require("mysql");
-import Promise = require("bluebird");
+import Promise from "bluebird";
 
 var Pool = require("mysql/lib/Pool").prototype;
 
@@ -20,4 +16,4 @@ Pool.execSql = function(sql: string, replacement: any[]) {
     });
 }
 
-export = mysql;
+export * from "mysql";

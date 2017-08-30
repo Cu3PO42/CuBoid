@@ -1,9 +1,8 @@
-import mysql = require("../mysql-bootstrap");
-import pokemonGl = require("../pkmdata/pokemonGl");
-import Promise = require("bluebird");
-import _ = require("lodash");
-import util = require("util");
-import fs = require("fs");
+import mysql from "../mysql-bootstrap";
+import * as pokemonGl from "../pkmdata/pokemonGl";
+import * as _ from "lodash";
+import * as util from "util";
+import * as fs from "fs";
 import Table = require("easy-table");
 import * as Tennu from "tennu";
 

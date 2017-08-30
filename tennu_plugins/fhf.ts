@@ -1,4 +1,4 @@
-import _ = require("lodash");
+import * as _ from "lodash";
 import * as Tennu from "tennu";
 
 export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
