@@ -21,6 +21,7 @@ async function execSql(queryName: string, ...params: (number | string)[]) {
             if (err) reject(err);
             conn.query(sqlQueries[queryName] || queryName, params, (err, res) => {
                 if (err) reject(err);
+                conn.release();
                 resolve(res);
             });
         })

@@ -42,6 +42,7 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
                 if (err) reject(err);
                 conn.query(statement, params, (err, res) => {
                     if (err) reject(err);
+                    conn.release();
                     resolve(res);
                 });
             })
