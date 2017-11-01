@@ -8,6 +8,7 @@ declare namespace Tennu {
             }
         }>;
         say(channel: string, msg: Reply): void;
+        info(message: string): void;
         config(key: string): any;
         _socket: any;
     }

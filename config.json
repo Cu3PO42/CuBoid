@@ -5,7 +5,7 @@
     "username": "CuBoid",
     "realname": "Cu's Bot",
     "nickserv": "nickserv",
-    "plugins": ["enable", "admin", "bits", "npr", "fhf", "calc", "tell", "control", "typegame", "pkmdata"],
+    "plugins": ["enable", "admin", "bits", "npr", "fhf", "calc", "tell", "control", "typegame", "pkmdata", "spam_prevention"],
     "command-trigger": "$",
     "disable-help": false,
     "admins": [{
