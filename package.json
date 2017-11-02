@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node index.js local.json"
+    "start": "node index.js"
   },
   "author": "Cu3PO42",
   "license": "MIT",
