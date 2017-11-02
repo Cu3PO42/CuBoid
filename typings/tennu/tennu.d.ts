@@ -58,6 +58,12 @@ declare namespace Tennu {
         args: any // TODO Figure this type out
     }
 
+    interface Message367 extends Message {
+        setter: string;
+        timestamp: number;
+        hostmaskPattern: string;
+    }
+
     // TODO: Add all the numeric messages.
 
     interface Command extends Message {
