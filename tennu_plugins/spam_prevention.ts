@@ -52,7 +52,7 @@ process.on('exit', saveTokens);
 export function init(client: Tennu.Client, pluginImports: Tennu.PluginImports) {
     const banlistPromiseResolver = new Map<string, BanResolver>();
 
-    const participatingChannels = new Set<string>(client.config('spampreventionchannels') || []);
+    const participatingChannels = new Set<string>(client.config('spampreventionchannels').map((e: string) => e.toLowerCase()) || []);
 
     function raw(message: string) {
         client.info(`-> ${message}`);
@@ -91,6 +91,7 @@ export function init(client: Tennu.Client, pluginImports: Tennu.PluginImports) {
     }
 
     async function getBanlist(channel: string) {
+        channel = channel.toLowerCase();
         if (banlistPromiseResolver.has(channel)) {
             return await banlistPromiseResolver.get(channel).promise;
         }
@@ -117,12 +118,14 @@ export function init(client: Tennu.Client, pluginImports: Tennu.PluginImports) {
     return {
         handlers: {
             join(message: Tennu.Message) {
-                if (participatingChannels.has(message.channel))
-                    newUsers.add(`${message.nickname}@${message.channel}`);
+                const channel = message.channel.toLocaleLowerCase();
+                if (participatingChannels.has(channel))
+                    newUsers.add(`${message.nickname}@${channel}`);
             },
 
             privmsg(message: Tennu.MessagePrivmsg) {
-                const id = `${message.nickname}@${message.channel}`;
+                const channel = message.channel.toLocaleLowerCase();
+                const id = `${message.nickname}@${channel}`;
                 if (!newUsers.has(id))
                     return;
                 
@@ -148,11 +151,12 @@ export function init(client: Tennu.Client, pluginImports: Tennu.PluginImports) {
             },
 
             '367'(message: Tennu.Message367) {
-                const resolver = banlistPromiseResolver.get(message.channel);
+                const channel = message.channel.toLowerCase();
+                const resolver = banlistPromiseResolver.get(channel);
                 if (resolver === undefined) return;
 
                 resolver.inProgress.push({
-                    channel: message.channel,
+                    channel,
                     hostmask: message.hostmaskPattern,
                     setBy: message.setter,
                     timestamp: message.timestamp,
@@ -160,11 +164,12 @@ export function init(client: Tennu.Client, pluginImports: Tennu.PluginImports) {
             },
 
             '368'(message: Tennu.Message) {
-                const resolver = banlistPromiseResolver.get(message.params[1]);
+                const channel = message.params[1].toLowerCase();
+                const resolver = banlistPromiseResolver.get(channel);
                 if (resolver === undefined) return;
 
                 resolver.resolve(resolver.inProgress);
-                banlistPromiseResolver.delete(message.channel);
+                banlistPromiseResolver.delete(channel);
             },
 
             '!unbanme'(command: Tennu.Command) {
