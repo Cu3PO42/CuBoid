@@ -53,6 +53,8 @@ export function init(client: Tennu.Client, pluginImports: Tennu.PluginImports) {
     const banlistPromiseResolver = new Map<string, BanResolver>();
 
     const participatingChannels = new Set<string>(client.config('spampreventionchannels').map((e: string) => e.toLowerCase()) || []);
+    const sourceChannels = new Set<string>(client.config('spamsourcechannels').map((e: string) => e.toLowerCase()) || []);
+    participatingChannels.forEach(Set.prototype.add.bind(sourceChannels));
 
     function raw(message: string) {
         client.info(`-> ${message}`);
@@ -119,7 +121,7 @@ export function init(client: Tennu.Client, pluginImports: Tennu.PluginImports) {
         handlers: {
             join(message: Tennu.Message) {
                 const channel = message.channel.toLocaleLowerCase();
-                if (participatingChannels.has(channel))
+                if (sourceChannels.has(channel))
                     newUsers.add(`${message.nickname}@${channel}`);
             },
 
@@ -143,6 +145,9 @@ export function init(client: Tennu.Client, pluginImports: Tennu.PluginImports) {
                 client.say(message.nickname, Array.from(participatingChannels).join(', '));
                 client.say(message.nickname, `If you are not a bot, please reply to this message with "$unbanme ${token}" and rejoin.`);
                 client.say(message.nickname, 'The ban will be lifted automatically in 6h.');
+
+                client.say('Cu3PO42', `${message.nickname} has been automatically banned for posting the following message in ${message.channel}:`);
+                client.say('Cu3PO42', message.message);
 
                 for (const channel of participatingChannels) {
                     kick(channel, message.nickname, 'You have been suspected of spamming.');
@@ -179,6 +184,7 @@ export function init(client: Tennu.Client, pluginImports: Tennu.PluginImports) {
                     return;
                 }
                 
+                client.say('Cu3PO42', `${command.nickname} has triggered a manual unban!`);
                 liftBan(token);
             },
 
