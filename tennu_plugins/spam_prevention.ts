@@ -132,8 +132,17 @@ export function init(client: Tennu.Client, pluginImports: Tennu.PluginImports) {
                     return;
                 
                 newUsers.delete(id);
-                if (message.message.toUpperCase() !== message.message || message.message.length < 25)
-                    return;
+                let isBot;
+                switch(true) {
+                    case message.message.toUpperCase() === message.message && message.message.length >= 25:
+                        isBot = true;
+                        break;
+                    case /https?:\/\/(?:\w+\.)?chatzy\.com/.test(message.message):
+                        isBot = false;
+                        break;
+                    default:
+                        return;
+                }
 
                 const token = generateNewToken();
                 const hostmask = `*!*@${message.hostmask.hostname}`;
@@ -141,12 +150,15 @@ export function init(client: Tennu.Client, pluginImports: Tennu.PluginImports) {
                 unbanTokens.set(token, unbanItem);
                 setTimeout(liftBan, banTimeout, unbanItem);
                 
-                client.say(message.nickname, 'You have been suspected of being a spam bot and been banned from the following channels: ');
-                client.say(message.nickname, Array.from(participatingChannels).join(', '));
-                client.say(message.nickname, `If you are not a bot, please reply to this message with "$unbanme ${token}" and rejoin.`);
-                client.say(message.nickname, 'The ban will be lifted automatically in 6h.');
+                if (isBot) {
+                    client.say(message.nickname, 'You have been suspected of being a spam bot and been banned from the following channels: ');
+                    client.say(message.nickname, Array.from(participatingChannels).join(', '));
+                    client.say(message.nickname, `If you are not a bot, please reply to this message with "$unbanme ${token}" and rejoin.`);
+                    client.say(message.nickname, 'The ban will be lifted automatically in 6h.');
+                }
 
-                client.say('Cu3PO42', `${message.nickname} has been automatically banned for posting the following message in ${message.channel}:`);
+                client.say('Cu3PO42', `${message.nickname} has been automatically banned for posting the following message in ${message.channel}.`);
+                client.say('Cu3PO42', `They are ${isBot ? '' : 'not '}being suspected of being a bot.`);
                 client.say('Cu3PO42', message.message);
 
                 for (const channel of participatingChannels) {
