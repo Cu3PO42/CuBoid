@@ -135,10 +135,12 @@ export function init(client: Tennu.Client, pluginImports: Tennu.PluginImports) {
                 let isBot;
                 switch(true) {
                     case message.message.toUpperCase() === message.message && message.message.length >= 25:
+                    case message.message.toUpperCase().includes('GLOBAL IRC ADVERTISING'):
+                    case message.message.includes('interested in this blog by'):
                         isBot = true;
                         break;
                     case /https?:\/\/(?:\w+\.)?chatzy\.com/.test(message.message):
-                        isBot = false;
+                        isBot = true;
                         break;
                     default:
                         return;
