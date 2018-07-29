@@ -416,7 +416,7 @@ export function init(client: Tennu.Client, imports: Tennu.PluginImports) {
                             else {
                                 return getPokemonTypesByName(command.args.join(" "))
                                 .then((rows) => {
-                                    return getTypesEfficiency(_.map<{name: string}, string>(rows, "name"));
+                                    return getTypesEfficiency(_.map(rows, "name"));
                                 })
                             }
                         })
